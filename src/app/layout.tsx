@@ -21,10 +21,28 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FUNDED SPREAD — Prop Firm",
+  title: "Funded Spread",
   description:
-    "The ultimate prop trading platform. Pass your evaluation, scale your account through Checkpoints, and trade your way to the top.",
+    "Empresa de fondeo para traders. Supera la evaluación, escala tu cuenta y quédate con hasta el 90% de las ganancias. Paga con cripto.",
+  openGraph: {
+    title: "Funded Spread",
+    description: "Empresa de fondeo para traders. Supera la evaluación, escala tu cuenta y quédate con hasta el 90% de las ganancias.",
+    url: "https://www.funded-spread.com",
+    siteName: "Funded Spread",
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Funded Spread Logo",
+      },
+    ],
+    locale: "es_ES",
+    type: "website",
+  },
 };
+
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 export default function RootLayout({
   children,
@@ -32,11 +50,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       <body
         className={`${orbitron.variable} ${rajdhani.variable} ${inter.variable} antialiased`}
       >
-        <LayoutShell>{children}</LayoutShell>
+        <LanguageProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </LanguageProvider>
       </body>
     </html>
   );

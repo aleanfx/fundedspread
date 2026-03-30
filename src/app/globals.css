@@ -30,6 +30,24 @@
   /* --- Borders --- */
   --border-subtle: #1a2236;
   --border-glow: rgba(139, 92, 246, 0.3);
+
+  /* --- Podium scale (responsive) --- */
+  --podium-scale: scale(0.48);
+  --podium-height: 155px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --podium-scale: scale(0.7);
+    --podium-height: 230px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --podium-scale: scale(1);
+    --podium-height: auto;
+  }
 }
 
 @theme inline {
@@ -60,6 +78,16 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Fix for Browser Autofill in Dark Mode --- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 50px #0b1121 inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* --- Scrollbar Gaming Style --- */
@@ -154,4 +182,47 @@ body {
 
 .animate-live-pulse {
   animation: livePulse 2s ease-in-out infinite;
+}
+
+/* --- Elite Rank: Flowing Purple Border Light --- */
+@property --elite-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes eliteBorderSpin {
+  to { --elite-angle: 360deg; }
+}
+
+.elite-flame-border {
+  position: relative;
+  border: 1px solid transparent !important;
+  background: 
+    linear-gradient(#0f0f14, #0f0f14) padding-box,
+    conic-gradient(from var(--elite-angle), #7c3aed, #d946ef, #f0abfc, #d946ef, #7c3aed, #4c1d95, #7c3aed) border-box;
+  animation: eliteBorderSpin 2.5s linear infinite;
+}
+
+.elite-flame-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(from var(--elite-angle), #7c3aed, #d946ef, #f0abfc, #d946ef, #7c3aed, #4c1d95, #7c3aed);
+  filter: blur(4px);
+  opacity: 0.5;
+  animation: eliteBorderSpin 2.5s linear infinite;
+}
+
+/* Novato shield subtle glow pulse */
+.novato-twinkle {
+  animation: novatoGlow 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 2px rgba(0,255,136,0.5));
+}
+
+@keyframes novatoGlow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(0,255,136,0.5)); }
+  50% { filter: drop-shadow(0 0 8px rgba(0,255,136,1)) drop-shadow(0 0 3px rgba(0,255,136,0.8)); }
 }

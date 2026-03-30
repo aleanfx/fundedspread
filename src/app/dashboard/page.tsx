@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
   TrendingDown,
@@ -10,25 +10,30 @@ import {
   Clock,
   Bell,
   Wifi,
+  Wallet,
+  BarChart3,
+  CalendarDays,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  Server,
+  KeyRound,
+  UserCircle,
+  Fingerprint,
+  Layers,
+  BadgeDollarSign,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import WithdrawModal from "@/components/WithdrawModal";
+import TradingObjectives from "@/components/dashboard/TradingObjectives";
+import PnLChart from "@/components/dashboard/PnLChart";
 
-/* ============================================
-   MOCK DATA FALLBACKS
-   ============================================ */
-const mockTrades = [
-  { date: "Feb 28", symbol: "XAUUSD", type: "SELL", lots: 0.5, entry: 2035.5, exit: 2032.18, pnl: 340.0 },
-  { date: "Feb 28", symbol: "EURUSD", type: "BUY", lots: 1.0, entry: 1.0845, exit: 1.0849, pnl: 40.0 },
-  { date: "Feb 27", symbol: "GBPJPY", type: "SELL", lots: 0.3, entry: 190.45, exit: 190.72, pnl: -81.0 },
-];
-
-const mockEquityCurve = [
-  20000, 20120, 20080, 20250, 20180, 20400, 20350, 20600, 20550,
-  20800, 20750, 20950, 21100, 21050, 21200, 21350, 21300, 21500,
-  21650, 21600, 21800, 21950, 22100, 22050, 22200, 22350, 22180,
-];
+import { calculateXP, getRankProgress, UserRankStats } from "@/lib/utils/rankSystem";
+import { RankBadge } from "@/components/RankBadge";
 
 /* ============================================
    ANIMATION VARIANTS
@@ -49,6 +54,24 @@ const itemVariants = {
 /* ============================================
    COMPONENTS
    ============================================ */
+
+const VerifiedBadge = ({ className = "w-5 h-5", checkColor = "#000000", badgeColor = "var(--neon-green)" }: { className?: string, checkColor?: string, badgeColor?: string }) => (
+  <div title="Usuario KYC Verificado" className="inline-flex items-center justify-center">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} overflow-visible`}>
+      <path
+        d="M12 2L14.8 4.6L18.5 4.3L19.5 7.8L22.6 9.8L21.1 13.2L22.6 16.6L19.5 18.6L18.5 22.1L14.8 21.8L12 24.4L9.2 21.8L5.5 22.1L4.5 18.6L1.4 16.6L2.9 13.2L1.4 9.8L4.5 7.8L5.5 4.3L9.2 4.6L12 2Z"
+        fill={badgeColor}
+      />
+      <path
+        d="M7.5 13.5L10.5 16.5L16.5 9.5"
+        stroke={checkColor}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </div>
+);
 
 function StatCard({
   title,
@@ -74,28 +97,29 @@ function StatCard({
   return (
     <motion.div
       variants={itemVariants}
-      className={`glass-card p-5 ${c.border} hover:${c.glow} transition-shadow duration-300`}
+      className={`glass-card p-4 ${c.border} hover:${c.glow} transition-shadow duration-300`}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs uppercase tracking-wider text-text-secondary" style={{ fontFamily: "var(--font-rajdhani)" }}>
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-text-secondary line-clamp-1" style={{ fontFamily: "var(--font-rajdhani)" }}>
           {title}
         </span>
-        <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center`}>
-          <Icon className={`w-4 h-4 ${c.text}`} />
+        <div className={`w-6 h-6 sm:w-7 sm:h-7 shrink-0 rounded-lg ${c.bg} flex items-center justify-center`}>
+          <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${c.text}`} />
         </div>
       </div>
-      <p className={`text-2xl font-bold ${c.text}`} style={{ fontFamily: "var(--font-orbitron)" }}>
+      <p className={`text-base sm:text-xl font-bold ${c.text} truncate`} style={{ fontFamily: "var(--font-orbitron)" }}>
         {value}
       </p>
       {subtitle && (
-        <p className="text-xs text-text-muted mt-1">{subtitle}</p>
+        <p className="text-[9px] sm:text-[10px] text-text-muted mt-1 truncate">{subtitle}</p>
       )}
     </motion.div>
   );
 }
 
 function DrawdownGauge({ current, max }: { current: number; max: number }) {
+  const { t } = useLanguage();
   const percentage = (current / max) * 100;
   const isWarning = percentage > 60;
   const isDanger = percentage > 80;
@@ -111,7 +135,7 @@ function DrawdownGauge({ current, max }: { current: number; max: number }) {
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs uppercase tracking-wider text-text-secondary" style={{ fontFamily: "var(--font-rajdhani)" }}>
-          Drawdown Diario
+          {t("dashboard.gauge.dailyDrawdown")}
         </span>
         <div className="w-8 h-8 rounded-lg bg-neon-green/5 flex items-center justify-center">
           <ShieldAlert className="w-4 h-4 text-neon-green" />
@@ -139,127 +163,229 @@ function DrawdownGauge({ current, max }: { current: number; max: number }) {
           <p className="text-lg font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
             {current}% / {max}%
           </p>
-          <p className="text-xs text-neon-green mt-1">Gestión de Riesgo Activa</p>
+          <p className="text-xs text-neon-green mt-1">{t("dashboard.gauge.riskActive")}</p>
         </div>
       </div>
     </motion.div>
   );
 }
 
-function EquityChart({ data }: { data: number[] }) {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const height = 200;
-  const width = 600;
-  const points = data.map((v, i) => ({
-    x: (i / (data.length - 1)) * width,
-    y: height - ((v - min) / range) * height,
-  }));
-  const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const area = `${line} L ${width} ${height} L 0 ${height} Z`;
+/* EquityChart replaced by PnLChart component */
 
-  return (
-    <motion.div variants={itemVariants} className="glass-card p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-            CURVA DE EQUIDAD
-          </h3>
-          <p className="text-xs text-text-muted mt-0.5">Métricas de rendimiento en tiempo real</p>
-        </div>
-        <div className="flex gap-1">
-          {["1S", "1M", "3M"].map((t, i) => (
-            <button
-              key={t}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${i === 1
-                ? "bg-neon-blue/20 text-neon-blue border border-neon-blue/30"
-                : "text-text-muted hover:text-text-secondary"
-                }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[200px]" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-        <motion.path
-          d={area} fill="url(#chartGrad)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
-        <motion.path
-          d={line} fill="none" stroke="#22d3ee" strokeWidth="2.5"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 2, ease: "easeInOut", delay: 0.3 }}
-        />
-        <motion.circle
-          cx={points[points.length - 1]?.x} cy={points[points.length - 1]?.y} r="4"
-          fill="#22d3ee" stroke="#050a14" strokeWidth="2"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 2.3 }}
-        />
-      </svg>
-    </motion.div>
-  );
-}
+interface Trade { date: string; symbol: string; type: string; lots: number; entry: number; exit: number; pnl: number; }
 
-function RecentTrades({ trades }: { trades: typeof mockTrades }) {
+function RecentTrades({ trades }: { trades: Trade[] }) {
+  const { t } = useLanguage();
   return (
     <motion.div variants={itemVariants} className="glass-card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-          OPERACIONES RECIENTES
+          {t("dashboard.recentTrades")}
         </h3>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-text-muted text-xs uppercase tracking-wider">
-              <th className="text-left pb-3 font-medium">Símbolo</th>
-              <th className="text-left pb-3 font-medium">Tipo</th>
-              <th className="text-right pb-3 font-medium">Entrada</th>
-              <th className="text-right pb-3 font-medium">Salida</th>
-              <th className="text-right pb-3 font-medium">P&L</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trades.map((trade, i) => (
-              <motion.tr
-                key={i}
-                className="border-t border-border-subtle/50 hover:bg-white/[0.02] transition-colors"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.1 }}
-              >
-                <td className="py-3 font-semibold text-text-primary">{trade.symbol}</td>
-                <td className="py-3">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${trade.type === "BUY"
-                    ? "bg-neon-green/10 text-neon-green"
-                    : "bg-neon-red/10 text-neon-red"
+      {trades.length === 0 ? (
+        <div className="text-center py-8">
+          <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
+          <p className="text-sm text-text-muted">Las operaciones aparecerán aquí cuando el EA de MT5 envíe datos.</p>
+          <p className="text-xs text-white/20 mt-1">Conecta tu Expert Advisor para ver el historial en tiempo real.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-text-muted text-xs uppercase tracking-wider">
+                <th className="text-left pb-3 font-medium">{t("dashboard.headers.symbol")}</th>
+                <th className="text-left pb-3 font-medium">{t("dashboard.headers.type")}</th>
+                <th className="text-right pb-3 font-medium">{t("dashboard.headers.entry")}</th>
+                <th className="text-right pb-3 font-medium">{t("dashboard.headers.exit")}</th>
+                <th className="text-right pb-3 font-medium">{t("dashboard.headers.pnl")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map((trade, i) => (
+                <motion.tr
+                  key={i}
+                  className="border-t border-border-subtle/50 hover:bg-white/[0.02] transition-colors"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                >
+                  <td className="py-3 font-semibold text-text-primary">{trade.symbol}</td>
+                  <td className="py-3">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${trade.type === "BUY"
+                      ? "bg-neon-green/10 text-neon-green"
+                      : "bg-neon-red/10 text-neon-red"
+                      }`}>
+                      {trade.type}
+                    </span>
+                  </td>
+                  <td className="py-3 text-right text-text-secondary font-mono text-xs">{trade.entry.toFixed(2)}</td>
+                  <td className="py-3 text-right text-text-secondary font-mono text-xs">{trade.exit.toFixed(2)}</td>
+                  <td className={`py-3 text-right font-bold font-mono ${trade.pnl >= 0 ? "text-neon-green" : "text-neon-red"
                     }`}>
-                    {trade.type}
-                  </span>
-                </td>
-                <td className="py-3 text-right text-text-secondary font-mono text-xs">{trade.entry.toFixed(2)}</td>
-                <td className="py-3 text-right text-text-secondary font-mono text-xs">{trade.exit.toFixed(2)}</td>
-                <td className={`py-3 text-right font-bold font-mono ${trade.pnl >= 0 ? "text-neon-green" : "text-neon-red"
-                  }`}>
-                  {trade.pnl >= 0 ? "+" : ""}${Math.abs(trade.pnl).toFixed(2)}
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+                    {trade.pnl >= 0 ? "+" : ""}${Math.abs(trade.pnl).toFixed(2)}
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ============================================
+   ACCOUNT CREDENTIALS CARD
+   ============================================ */
+function AccountCredentials({ account, challengeMetadata }: { account: any; challengeMetadata: any }) {
+  const { t } = useLanguage();
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  if (!account) return null;
+
+  const login = account.mt5_login || '—';
+  const password = account.mt5_password || '—';
+  const server = account.mt5_server || 'FundedSpread-Demo';
+  const accountType = account.is_demo ? 'Demo' : 'Live';
+  const leverageDisplay = account.ctrader_leverage ? `1:${account.ctrader_leverage}` : '1:100';
+
+  const typeLabel =
+    challengeMetadata.type === 'express_1phase' ? 'Express X' :
+      challengeMetadata.type === 'classic_2phase' ? 'Classic Pro' :
+        challengeMetadata.type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
+
+  const phaseLabel =
+    challengeMetadata.isFunded ? 'Funded' :
+      challengeMetadata.type === 'express_1phase' ? 'Phase 1' :
+        `Phase ${challengeMetadata.phase}`;
+
+  const statusColor =
+    challengeMetadata.isFunded ? 'neon-green' :
+      account.account_status === 'failed' ? 'neon-red' : 'neon-blue';
+
+  const CredentialRow = ({ icon: Icon, label, value, fieldKey, isSensitive = false, mono = true }: {
+    icon: React.ElementType; label: string; value: string; fieldKey: string; isSensitive?: boolean; mono?: boolean;
+  }) => (
+    <div className="group flex items-center justify-between py-2 px-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] hover:bg-white/[0.04] transition-all duration-200">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-7 h-7 rounded-lg bg-white/[0.04] flex items-center justify-center flex-shrink-0 border border-white/[0.06]">
+          <Icon className="w-3 h-3 text-text-secondary" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[9px] uppercase tracking-widest text-text-muted mb-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>{label}</p>
+          <p className={`text-xs font-semibold text-text-primary ${mono ? 'font-mono tracking-wide' : ''}`} style={mono ? {} : { fontFamily: "var(--font-rajdhani)" }}>
+            {isSensitive && !showPassword ? '•'.repeat(Math.min(value.length, 12)) : value}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {isSensitive && (
+          <motion.button
+            onClick={() => setShowPassword(!showPassword)}
+            className="w-6 h-6 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-text-muted hover:text-text-secondary hover:border-white/[0.12] transition-all"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+          </motion.button>
+        )}
+        {value !== '—' && (
+          <motion.button
+            onClick={() => copyToClipboard(value, fieldKey)}
+            className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${copiedField === fieldKey
+                ? 'bg-neon-green/10 border-neon-green/30 text-neon-green'
+                : 'bg-white/[0.04] border-white/[0.06] text-text-muted hover:text-text-secondary hover:border-white/[0.12]'
+              }`}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <AnimatePresence mode="wait">
+              {copiedField === fieldKey ? (
+                <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                  <Check className="w-3 h-3" />
+                </motion.div>
+              ) : (
+                <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                  <Copy className="w-3 h-3" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="glass-card p-4 relative overflow-hidden"
+    >
+      {/* Subtle corner glow */}
+      <div className={`absolute -top-16 -right-16 w-32 h-32 bg-${statusColor}/5 blur-[60px] rounded-full pointer-events-none`} />
+      <div className={`absolute -bottom-16 -left-16 w-32 h-32 bg-${statusColor}/3 blur-[60px] rounded-full pointer-events-none`} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-xl bg-${statusColor}/10 border border-${statusColor}/20 flex items-center justify-center`}>
+            <Fingerprint className={`w-4 h-4 text-${statusColor}`} />
+          </div>
+          <div>
+            <h3 className="text-xs font-bold text-text-primary tracking-wide" style={{ fontFamily: "var(--font-orbitron)" }}>
+              {t("dashboard.accountCredentials.title")}
+            </h3>
+            <p className="text-[9px] text-text-muted uppercase tracking-widest mt-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>
+              MetaTrader 5
+            </p>
+          </div>
+        </div>
+
+        {/* Status Badge */}
+        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg bg-${statusColor}/10 border border-${statusColor}/20`}>
+          <span className={`w-1.5 h-1.5 rounded-full bg-${statusColor} animate-pulse`} />
+          <span className={`text-[9px] font-bold text-${statusColor} uppercase tracking-wider`} style={{ fontFamily: "var(--font-orbitron)" }}>
+            {phaseLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Credentials Grid */}
+      <div className="space-y-1.5 relative z-10">
+        <CredentialRow icon={UserCircle} label={t("dashboard.accountCredentials.login")} value={login} fieldKey="login" />
+        <CredentialRow icon={KeyRound} label={t("dashboard.accountCredentials.password")} value={password} fieldKey="password" isSensitive />
+        <CredentialRow icon={Server} label={t("dashboard.accountCredentials.server")} value={server} fieldKey="server" />
+      </div>
+
+      {/* Divider */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent my-3" />
+
+      {/* Account Details Mini Cards */}
+      <div className="grid grid-cols-2 gap-2 relative z-10">
+        <div className="py-2 px-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <p className="text-[9px] uppercase tracking-widest text-text-muted mb-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("dashboard.accountCredentials.plan")}</p>
+          <p className="text-xs font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>{typeLabel}</p>
+        </div>
+        <div className="py-2 px-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <p className="text-[9px] uppercase tracking-widest text-text-muted mb-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("dashboard.accountCredentials.accountSize")}</p>
+          <p className="text-xs font-bold text-neon-green" style={{ fontFamily: "var(--font-orbitron)" }}>${challengeMetadata.initialBalance.toLocaleString()}</p>
+        </div>
+        <div className="py-2 px-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <p className="text-[9px] uppercase tracking-widest text-text-muted mb-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("dashboard.accountCredentials.type")}</p>
+          <p className="text-xs font-bold text-text-primary" style={{ fontFamily: "var(--font-rajdhani)" }}>{accountType}</p>
+        </div>
+        <div className="py-2 px-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <p className="text-[9px] uppercase tracking-widest text-text-muted mb-0.5" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("dashboard.accountCredentials.leverage")}</p>
+          <p className="text-xs font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>{leverageDisplay}</p>
+        </div>
       </div>
     </motion.div>
   );
@@ -269,6 +395,7 @@ function RecentTrades({ trades }: { trades: typeof mockTrades }) {
    MAIN DASHBOARD PAGE
    ============================================ */
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     balance: 0,
     equity: 0,
@@ -283,6 +410,7 @@ export default function DashboardPage() {
     phase: 1,
     checkpointLevel: 1,
     profitTargetPct: 8,
+    profitSplitPct: 80,
     initialBalance: 10000,
     displayName: 'Trader',
     hasScalingX2: false,
@@ -292,15 +420,23 @@ export default function DashboardPage() {
   const [canLevelUp, setCanLevelUp] = useState(false);
   const [violation, setViolation] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<UserRankStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userObj, setUserObj] = useState<any>(null);
   const [payoutDate, setPayoutDate] = useState<Date | null>(null);
-  const [timeToPayout, setTimeToPayout] = useState<string>("Calculando...");
+  const [timeToPayout, setTimeToPayout] = useState<string>("");
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [realPnLData, setRealPnLData] = useState<any[]>([]);
+  const [realTrades, setRealTrades] = useState<any[]>([]);
 
   const supabase = createClient();
+  const rankProgress = useMemo(() => {
+    if (!userStats) return null;
+    return getRankProgress(userStats);
+  }, [userStats]);
 
   useEffect(() => {
     // Read URL parameters for error messages
@@ -308,13 +444,13 @@ export default function DashboardPage() {
     const errorParam = urlParams.get('error');
     if (errorParam) {
       if (errorParam === 'InvalidBalanceOrType') {
-        setAlertMessage("Error: La cuenta que intentas vincular no tiene el balance correcto o no es una cuenta Demo. Por favor, crea una nueva cuenta Demo con el balance exacto y en USD.");
+        setAlertMessage(t("dashboard.errors.invalidBalance"));
       } else if (errorParam === 'AccountAlreadyInUse') {
-        setAlertMessage("Error: Esta cuenta de MT5 ya está vinculada a otro Challenge. Por favor, verifica tus datos de registro.");
+        setAlertMessage(t("dashboard.errors.accountInUse"));
       } else {
-        setAlertMessage(`Error de vinculación: ${errorParam}`);
+        setAlertMessage(`${t("dashboard.errors.linkingError")} ${errorParam}`);
       }
-      
+
       // Clean URL after reading
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -332,6 +468,13 @@ export default function DashboardPage() {
       setUserId(user.id);
       setUserObj(user);
 
+      // Fetch user rank stats from 'users' table
+      const { data: userData } = await supabase
+        .from('users')
+        .select('xp, total_withdrawals, top_three_finishes, top_ten_finishes, is_admin, is_verified')
+        .eq('id', user.id)
+        .single();
+
       // Fetch all accounts
       const { data: accountsData } = await supabase
         .from('mt5_accounts')
@@ -339,10 +482,32 @@ export default function DashboardPage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (accountsData && accountsData.length > 0) {
+      if (userData && accountsData && accountsData.length > 0) {
         setAccounts(accountsData);
         setSelectedAccountId(accountsData[0].id);
+
+        const stats = {
+          xp: userData.xp || calculateXP(accountsData[0]),
+          isFunded: accountsData[0].account_status === 'funded',
+          totalWithdrawals: userData.total_withdrawals || 0,
+          topThreeFinishes: userData.top_three_finishes || 0,
+          topTenFinishes: userData.top_ten_finishes || 0,
+          isAdmin: userData.is_admin || false,
+          isVerified: userData.is_verified || false
+        };
+        setUserStats(stats);
+        
+        // Sync real global rank (like Elite from $3000 withdrawals) directly to leaderboard so avatar is always accurate
+        const rankProg = getRankProgress(stats);
+        if (rankProg.currentRank.id !== 'unranked') {
+            supabase.from('leaderboard_traders').update({ rank_title: rankProg.currentRank.id }).eq('user_id', user.id).then();
+        }
+
+      } else if (accountsData && accountsData.length > 0) {
+        setChallengeState('none');
+        setLoading(false);
       } else {
+        // User has no accounts at all
         setChallengeState('none');
         setLoading(false);
       }
@@ -352,7 +517,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!selectedAccountId || accounts.length === 0 || !userObj) return;
-    
+
     const acc = accounts.find(a => a.id === selectedAccountId);
     if (!acc) return;
 
@@ -363,24 +528,25 @@ export default function DashboardPage() {
       phase: acc.challenge_phase || 1,
       checkpointLevel: acc.checkpoint_level || 1,
       profitTargetPct: acc.profit_target_pct || (acc.challenge_type === 'express_1phase' ? 10 : 8),
+      profitSplitPct: acc.profit_split_pct || 80,
       initialBalance: Number(acc.initial_balance) || 10000,
-      displayName: userObj.user_metadata?.display_name || userObj.email?.split('@')[0] || 'Trader',
+      displayName: userObj.user_metadata?.full_name || userObj.user_metadata?.name || userObj.user_metadata?.display_name || userObj.email?.split('@')[0] || 'Trader',
       hasScalingX2: acc.has_scaling_x2 || false,
       isFunded: acc.account_status === 'funded'
     });
 
 
     if (acc.account_status === 'pending_creation' || acc.account_status === 'pending_link') {
-        setChallengeState('pending');
-        setLoading(false);
-        return;
+      setChallengeState('pending');
+      setLoading(false);
+      return;
     }
 
     if (acc.account_status === 'failed' || acc.is_active === false) {
-        setChallengeState('failed');
-        setViolation(acc.status_reason || acc.violation_type || "Cuenta terminada.");
+      setChallengeState('failed');
+      setViolation(acc.status_reason || acc.violation_type || "Cuenta terminada.");
     } else {
-        setChallengeState('active');
+      setChallengeState('active');
     }
 
     const initial = Number(acc.initial_balance) || 10000;
@@ -406,7 +572,65 @@ export default function DashboardPage() {
     const daysToWait = acc.has_weekly_payouts ? 7 : 30;
     const nextPayout = new Date(createdAt.getTime() + daysToWait * 24 * 60 * 60 * 1000);
     setPayoutDate(nextPayout);
-    
+
+    // Fetch Real P&L Snapshots
+    async function fetchPnLData() {
+      const { data: snapshots, error } = await supabase
+        .from('daily_snapshots')
+        .select('*')
+        .eq('mt5_account_id', selectedAccountId)
+        .order('date', { ascending: true });
+
+      if (snapshots && snapshots.length > 0) {
+        let cumPnlPct = 0;
+        const initial = Number(acc.initial_balance) || 10000;
+
+        const transformed = snapshots.map((s, i) => {
+          const currentPnlPct = ((Number(s.equity) - initial) / initial) * 100;
+          // Calculate daily P&L comparison if we have a previous day
+          const prevEquity = i > 0 ? Number(snapshots[i - 1].equity) : initial;
+          const dailyPnlPct = ((Number(s.equity) - prevEquity) / prevEquity) * 100;
+
+          return {
+            day: i + 1,
+            date: new Date(s.date).toLocaleDateString("es", { month: "short", day: "numeric" }),
+            pnlPct: dailyPnlPct,
+            cumPnlPct: currentPnlPct,
+            balance: Number(s.balance)
+          };
+        });
+        setRealPnLData(transformed);
+      } else {
+        setRealPnLData([]);
+      }
+    }
+    fetchPnLData();
+
+    // Fetch Real Trade History
+    async function fetchTradeHistory() {
+      const { data: trades, error } = await supabase
+        .from('trade_history')
+        .select('*')
+        .eq('mt5_account_id', selectedAccountId)
+        .order('closed_at', { ascending: false })
+        .limit(10);
+
+      if (trades && trades.length > 0) {
+        setRealTrades(trades.map(t => ({
+          date: new Date(t.closed_at).toLocaleDateString(),
+          symbol: t.symbol,
+          type: t.type,
+          lots: Number(t.lots),
+          entry: Number(t.entry_price),
+          exit: Number(t.exit_price),
+          pnl: Number(t.pnl)
+        })));
+      } else {
+        setRealTrades([]);
+      }
+    }
+    fetchTradeHistory();
+
     setLoading(false);
   }, [selectedAccountId, accounts, userObj]);
 
@@ -418,7 +642,7 @@ export default function DashboardPage() {
       const diff = payoutDate.getTime() - now.getTime();
 
       if (diff <= 0) {
-        setTimeToPayout("¡LISTO PARA RETIRO!");
+        setTimeToPayout(t("dashboard.readyForPayout"));
         clearInterval(interval);
         return;
       }
@@ -440,24 +664,23 @@ export default function DashboardPage() {
   // Handle Level Up Action (will be triggered by real MT5 webhook in production)
   const handleLevelUp = async (scalingAction?: 'withdraw' | 'scale') => {
     if (scalingAction === 'withdraw') {
-      alert("Tu solicitud de retiro ha sido registrada. El equipo de operaciones procesará tu pago.");
+      alert(t("dashboard.withdrawSuccess"));
       return;
     }
     // Scale action — reload to reflect DB changes made by risk engine
     window.location.reload();
   };
 
-  const xpProgress = canLevelUp ? 100 : Math.min(99, Math.max(0, ((stats.equity - 10000) / 2000) * 100));
 
-  if (loading) return <div className="p-6 text-white text-center mt-20 font-mono animate-pulse">Cargando Dashboard...</div>;
+  if (loading) return <div className="p-6 text-white text-center mt-20 font-mono animate-pulse">{t("dashboard.loading")}</div>;
 
   if (challengeState === 'none') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-        <h1 className="text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-orbitron)" }}>No tienes un challenge activo</h1>
-        <p className="text-text-muted mb-8 max-w-md">Adquiere un challenge para comenzar tu carrera como trader fondeado y acceder a capital institucional.</p>
+        <h1 className="text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-orbitron)" }}>{t("dashboard.noActiveChallenge.title")}</h1>
+        <p className="text-text-muted mb-8 max-w-md">{t("dashboard.noActiveChallenge.desc")}</p>
         <a href="/checkout" className="bg-neon-green text-black px-8 py-3 font-bold rounded-lg hover:bg-neon-green/80 transition-colors uppercase tracking-widest glow-green shadow-[0_0_15px_rgba(57,255,20,0.4)]">
-          Ver planes de Fondeo
+          {t("dashboard.noActiveChallenge.button")}
         </a>
       </div>
     );
@@ -469,11 +692,11 @@ export default function DashboardPage() {
         {/* Ambient background glow */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-blue/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-green/5 blur-[120px] rounded-full pointer-events-none" />
-        
+
         <div className="glass-card p-6 sm:p-8 max-w-xl border-neon-blue/20 shadow-[0_0_40px_rgba(0,195,255,0.05)] relative overflow-hidden z-10" style={{ borderRadius: '20px' }}>
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-neon-blue/20 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-neon-green/10 blur-[80px] rounded-full pointer-events-none" />
-          
+
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 8, ease: "linear", repeat: Infinity }}
@@ -481,41 +704,41 @@ export default function DashboardPage() {
           >
             <Activity className="w-8 h-8 text-neon-blue animate-pulse" />
           </motion.div>
-          
+
           <h1 className="text-3xl font-bold mb-2 text-white tracking-widest" style={{ fontFamily: "var(--font-orbitron)" }}>
-            ¡PAGO CONFIRMADO!
+            {t("dashboard.pending.title")}
           </h1>
           <p className="text-text-secondary text-base mb-6 max-w-md mx-auto">
-            Tu challenge de <strong className="text-neon-green text-lg font-bold font-mono tracking-wider glow-text-green">${targetBalance.toLocaleString("en-US")}</strong> está en preparación.
+            {t("dashboard.pending.desc1")} <strong className="text-neon-green text-lg font-bold font-mono tracking-wider glow-text-green">${targetBalance.toLocaleString("en-US")}</strong> {t("dashboard.pending.desc2")}
           </p>
-          
+
           <div className="bg-black/40 p-5 sm:p-6 border border-white/5 rounded-[16px] mb-6 text-left relative z-10 backdrop-blur-sm">
             <h3 className="font-bold mb-3 text-neon-blue flex items-center gap-2 text-base" style={{ fontFamily: "var(--font-rajdhani)" }}>
-              <Clock className="w-4 h-4" /> ¿Qué sigue ahora?
+              <Clock className="w-4 h-4" /> {t("dashboard.pending.whatsNext")}
             </h3>
             <div className="h-px w-full bg-gradient-to-r from-neon-blue/30 to-transparent mb-3" />
             <p className="text-text-secondary leading-snug text-sm">
-              Nuestro sistema automatizado está configurando tu cuenta de financiamiento en <strong>MetaTrader 5</strong> en servidores institucionales.
+              {t("dashboard.pending.step1")}
             </p>
             <ul className="space-y-2 mt-4 text-text-muted text-sm relative z-10">
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue mt-1.5 shrink-0 shadow-[0_0_8px_rgba(0,195,255,0.8)]" />
-                <span>Tu cuenta será <strong>DEMO</strong> con el balance exacto.</span>
+                <span>{t("dashboard.pending.step2")}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-green mt-1.5 shrink-0 shadow-[0_0_8px_rgba(57,255,20,0.8)]" />
-                <span>Motor de riesgo integrado para monitoreo en vivo.</span>
+                <span>{t("dashboard.pending.step3")}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#facc15] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
-                <span>Recibirás un correo con tus credenciales seguras en <strong>5 a 15 mins.</strong></span>
+                <span>{t("dashboard.pending.step4")}</span>
               </li>
             </ul>
           </div>
-          
+
           <div className="inline-flex items-center justify-center gap-3 w-full sm:w-auto bg-neon-blue/10 border border-neon-blue/30 text-neon-blue px-6 py-3 font-bold rounded-lg cursor-wait uppercase tracking-widest relative z-10 shadow-[0_0_15px_rgba(0,195,255,0.2)] text-sm">
             <span className="w-4 h-4 border-2 border-neon-blue border-t-transparent rounded-full animate-spin"></span>
-            Creando Servidor MT5...
+            {t("dashboard.pending.creatingServer")}
           </div>
         </div>
       </div>
@@ -524,16 +747,16 @@ export default function DashboardPage() {
 
   return (
     <motion.div
-      className="p-6 max-w-[1400px] mx-auto"
+      className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto pb-32 sm:pb-8"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Top Bar */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
-        <div className="flex flex-col gap-1">
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-1 w-full sm:w-auto">
           <p className="text-xs uppercase tracking-widest text-text-muted" style={{ fontFamily: "var(--font-rajdhani)" }}>
-            Cuenta Seleccionada
+            {t("dashboard.selectedAccount")}
           </p>
           {accounts && accounts.length > 1 ? (
             <select
@@ -551,13 +774,13 @@ export default function DashboardPage() {
               {accounts.map(acc => {
                 const typeLabel =
                   acc.challenge_type === 'express_1phase' ? 'Express X' :
-                  acc.challenge_type === 'classic_2phase' ? 'Classic Pro' :
-                  acc.challenge_type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
-                
-                const statusLabel = 
+                    acc.challenge_type === 'classic_2phase' ? 'Classic Pro' :
+                      acc.challenge_type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
+
+                const statusLabel =
                   acc.account_status === 'funded' ? 'Fondeada' :
-                  acc.account_status === 'failed' ? 'Terminada' :
-                  acc.challenge_phase > 1 ? `Fase ${acc.challenge_phase}` : 'Fase 1';
+                    acc.account_status === 'failed' ? 'Terminada' :
+                      acc.challenge_phase > 1 ? `Fase ${acc.challenge_phase}` : 'Fase 1';
 
                 return (
                   <option key={acc.id} value={acc.id} className="bg-slate-900 text-white">
@@ -570,8 +793,8 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
                 {challengeMetadata?.type === 'express_1phase' ? 'Express X' :
-                 challengeMetadata?.type === 'classic_2phase' ? 'Classic Pro' :
-                 challengeMetadata?.type === 'titan_3phase' ? 'Titan Max' : 'Challenge'}
+                  challengeMetadata?.type === 'classic_2phase' ? 'Classic Pro' :
+                    challengeMetadata?.type === 'titan_3phase' ? 'Titan Max' : 'Challenge'}
               </span>
               <span className="text-xs text-neon-green px-2 py-0.5 bg-neon-green/10 rounded border border-neon-green/20" style={{ fontFamily: "var(--font-orbitron)" }}>
                 ${challengeMetadata?.initialBalance?.toLocaleString()}
@@ -579,14 +802,15 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-border-subtle text-xs text-text-secondary hover:border-neon-green/30 transition-colors">
             <Bell className="w-3.5 h-3.5" />
-            Alertas
+            <span className="hidden sm:inline">{t("dashboard.alertsLabel")}</span>
+            <span className="sm:hidden">Alertas</span>
           </button>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-green/5 border border-neon-green/20">
             <Wifi className="w-3.5 h-3.5 text-neon-green" />
-            <span className="text-xs font-medium text-neon-green">Mercado en Vivo</span>
+            <span className="text-xs font-medium text-neon-green whitespace-nowrap">{t("dashboard.liveMarket")}</span>
           </div>
         </div>
       </motion.div>
@@ -597,183 +821,329 @@ export default function DashboardPage() {
           <ShieldAlert className={`w-6 h-6 flex-shrink-0 ${violation ? 'text-red-500' : 'text-yellow-500'}`} />
           <div>
             <h3 className={`font-bold ${violation ? 'text-red-500' : 'text-yellow-500'}`} style={{ fontFamily: "var(--font-orbitron)" }}>
-              {violation ? '⚠ CUENTA SUSPENDIDA' : '⚠ ATENCIÓN REQUERIDA'}
+              {violation ? t("dashboard.alerts.suspended") : t("dashboard.alerts.attention")}
             </h3>
             <p className={`text-sm ${violation ? 'text-red-200' : 'text-yellow-200'}`}>
               {violation ? (
                 violation.includes('daily_drawdown')
-                  ? 'Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Diario del 5%. Contacta soporte para revisar tu cuenta.'
+                  ? t("dashboard.alerts.ddExceeded")
                   : violation.includes('TERMINATED')
-                    ? violation.replace('daily_drawdown_5_percent', 'Drawdown Diario excedió 5%').replace(/_/g, ' ')
-                    : `Tu cuenta de trading ha sido suspendida: ${violation.replace(/_/g, ' ')}`
+                    ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
+                    : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
               ) : alertMessage}
             </p>
           </div>
         </motion.div>
       )}
 
-      {/* Welcome Banner */}
-      <motion.div
-        variants={itemVariants}
-        className={`glass-card p-6 mb-6 ${canLevelUp ? 'border-neon-green/50 glow-green' : 'animate-border-glow'}`}
-      >
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xs text-text-muted tracking-widest uppercase mb-1">
-              Bienvenido de nuevo,
-            </h2>
-            <h1 className="text-3xl font-bold text-neon-green text-glow-green uppercase" style={{ fontFamily: "var(--font-orbitron)" }}>
-              {challengeMetadata.displayName}
-            </h1>
-            <p className="text-sm text-text-muted mt-1">
-              {canLevelUp 
-                ? `¡Felicidades! Has alcanzado el objetivo de +${challengeMetadata.profitTargetPct}%.` 
-                : challengeMetadata.type === 'express_1phase'
-                  ? `Fase actual: Evaluación Express (10%)`
-                  : challengeMetadata.type === 'classic_2phase' 
-                    ? `Fase actual: ${challengeMetadata.phase === 1 ? 'Evaluación 1 (8%)' : 'Evaluación 2 (5%)'}`
-                    : `Nivel actual: Checkpoint ${challengeMetadata.checkpointLevel} (+20% para escalar)`
-              }
-            </p>
-          </div>
-          <div className="lg:text-right">
-            <div className="flex items-center gap-2 mb-2 lg:justify-end">
-              <span className="text-xs bg-neon-green/10 text-neon-green px-2 py-0.5 rounded font-bold tracking-wider" style={{ fontFamily: "var(--font-orbitron)" }}>
-                {challengeMetadata.type === 'express_1phase'
-                   ? `CHALLENGE EXPRESS — 1 FASE`
-                   : `CHALLENGE CLÁSICO — FASE ${challengeMetadata.phase}`
-                }
-              </span>
-              {challengeMetadata.hasScalingX2 && (
-                <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded font-bold tracking-wider ml-1" style={{ fontFamily: "var(--font-orbitron)" }}>
-                  + ESCALAMIENTO X2
-                </span>
-              )}
+      {/* Top Section Layout: Credentials, Welcome & Stats */}
+      <div className="flex flex-col lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
 
-            </div>
+        {/* Welcome Banner (Mobile: First, Desktop: Right Col First) */}
+        <div className="order-1 lg:order-none lg:col-span-2 xl:col-span-3 lg:col-start-2 lg:row-start-1">
+          <motion.div
+            variants={itemVariants}
+            className={`glass-card p-5 sm:p-6 w-full h-full flex flex-col justify-center ${canLevelUp ? 'border-neon-green/50 glow-green' : 'animate-border-glow'}`}
+          >
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+              {/* Left: Avatar + Name + Phase */}
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                {/* Profile Picture */}
+                <div className="relative">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-neon-green/30 overflow-hidden flex-shrink-0 bg-neon-green/5 flex items-center justify-center">
+                    {userObj?.user_metadata?.avatar_url ? (
+                      <img src={userObj.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-neon-green font-bold text-lg sm:text-xl uppercase" style={{ fontFamily: "var(--font-orbitron)" }}>
+                        {challengeMetadata.displayName?.charAt(0) || 'U'}
+                      </span>
+                    )}
+                  </div>
+                  {/* Verified Badge */}
+                  {(userStats?.isAdmin || userStats?.isVerified || userObj?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
+                    <div className="absolute -bottom-1 -right-1 z-10">
+                      <VerifiedBadge className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                  )}
+                </div>
 
-            {canLevelUp ? (
-              <div className="flex flex-col gap-3 w-full lg:w-[320px]">
-                {challengeMetadata.hasScalingX2 && challengeMetadata.phase > (challengeMetadata.type === 'express_1phase' ? 1 : 2) && stats.balance > challengeMetadata.initialBalance ? (
-                  <>
-                    <motion.button
-                      onClick={() => handleLevelUp('withdraw')}
-                      className="w-full py-2.5 bg-neon-blue/10 text-neon-blue font-bold rounded-lg border border-neon-blue/40 uppercase tracking-widest text-[11px]"
-                      style={{ fontFamily: "var(--font-orbitron)" }}
-                      whileHover={{ backgroundColor: "rgba(34, 211, 238, 0.2)", scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Retirar Profit (80/20)
-                    </motion.button>
-                    <motion.button
-                      onClick={() => handleLevelUp('scale')}
-                      className="w-full py-2.5 bg-yellow-500 text-black font-extrabold rounded-lg border border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.7)] uppercase tracking-widest text-[11px]"
-                      style={{ fontFamily: "var(--font-orbitron)" }}
-                      whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(234,179,8,1)" }}
-                      whileTap={{ scale: 0.95 }}
-                      animate={{ scale: [1, 1.02, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      Invertir y Escalar x2
-                    </motion.button>
-                  </>
-                ) : (
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs text-text-muted tracking-widest uppercase" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                      {t("dashboard.welcomeBack")}
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-neon-green text-glow-green uppercase truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
+                      {challengeMetadata.displayName}
+                    </h1>
+                    {rankProgress && (
+                      <RankBadge 
+                        rankId={rankProgress.currentRank.id} 
+                        size="md"
+                        className="mt-0.5" 
+                      />
+                    )}
+                  </div>
+                  <span className="text-xs text-text-muted whitespace-nowrap mt-0.5">
+                    {challengeMetadata.isFunded
+                      ? "Cuenta Fondeada - Operativa"
+                      : canLevelUp
+                        ? `${t("dashboard.levelUp.congrats")} +${challengeMetadata.profitTargetPct}%.`
+                        : challengeMetadata.type === 'express_1phase'
+                          ? t("dashboard.levelUp.express")
+                          : challengeMetadata.type === 'classic_2phase'
+                            ? (challengeMetadata.phase === 1 ? t("dashboard.levelUp.phase1") : t("dashboard.levelUp.phase2"))
+                            : `${t("dashboard.levelUp.checkpoint1")} ${challengeMetadata.checkpointLevel} ${t("dashboard.levelUp.checkpoint2")}`
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: Badges + Rank/LevelUp */}
+              <div className="flex flex-col items-start xl:items-end gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] bg-neon-green/10 text-neon-green px-2.5 py-1 rounded font-bold tracking-wider whitespace-nowrap" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    {challengeMetadata.isFunded
+                      ? "ACCOUNT FUNDED"
+                      : challengeMetadata.type === 'express_1phase'
+                        ? t("dashboard.badges.express")
+                        : `${t("dashboard.badges.classic")} ${challengeMetadata.phase}`
+                    }
+                  </span>
+                  <span className="text-[10px] bg-neon-blue/10 text-neon-blue px-2.5 py-1 rounded font-bold tracking-wider whitespace-nowrap" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    {t("dashboard.badges.split")} {challengeMetadata.profitSplitPct}%
+                  </span>
+                  {challengeMetadata.hasScalingX2 && (
+                    <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-2.5 py-1 rounded font-bold tracking-wider whitespace-nowrap" style={{ fontFamily: "var(--font-orbitron)" }}>
+                      {t("dashboard.badges.scaling")}
+                    </span>
+                  )}
+                </div>
+
+                {canLevelUp ? (
                   <motion.button
                     onClick={() => handleLevelUp()}
-                    className="w-full lg:w-[300px] py-2 bg-yellow-500 text-black font-extrabold rounded-lg border border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.7)] uppercase tracking-wider"
+                    className="py-2 px-6 bg-yellow-500 text-black font-extrabold rounded-lg border border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] uppercase tracking-wider text-xs whitespace-nowrap w-full xl:w-auto"
                     style={{ fontFamily: "var(--font-orbitron)" }}
-                    whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(234,179,8,1)" }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     animate={{ scale: [1, 1.02, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   >
-                    SUBIR DE NIVEL
+                    {t("dashboard.buttons.levelUp")}
                   </motion.button>
+                ) : (
+                  rankProgress && rankProgress.nextRank && (
+                    <div className="flex flex-col items-start xl:items-end gap-1.5 w-full xl:w-[260px]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] uppercase tracking-widest text-text-muted" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                          XP Rank: <span className="text-neon-green">{rankProgress.xp.toLocaleString()}</span>
+                        </span>
+                        <span className="text-[9px] uppercase tracking-widest font-bold text-text-muted/40" style={{ fontFamily: "var(--font-orbitron)" }}>
+                          SGT: {t("leaderboard.ranks." + (rankProgress.nextRank.id === 'novato' ? 'Rookie' : rankProgress.nextRank.id.charAt(0).toUpperCase() + rankProgress.nextRank.id.slice(1)))}
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/[0.04] p-[1px]">
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-neon-green/40 to-neon-green"
+                          style={{ boxShadow: "0 0 8px rgba(57, 255, 20, 0.3)" }}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${rankProgress.progressToNext}%` }}
+                          transition={{ duration: 1.5, ease: "easeOut" }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-text-muted/60 font-medium leading-relaxed" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                        {rankProgress.nextRank.reqDescription}
+                      </p>
+                    </div>
+                  )
                 )}
               </div>
-            ) : (
-              <>
-                {/* XP Progress Bar */}
-                <div className="w-full lg:w-[300px] h-4 bg-white/5 rounded-full border border-border-subtle overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full relative"
-                    style={{ background: "linear-gradient(90deg, #39ff14, #22d3ee)" }}
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${xpProgress}%` }}
-                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
-                  </motion.div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Left Column: Account Credentials (Mobile: Second, Desktop: Left Col Span 2 Rows) */}
+        <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:row-span-2 h-max">
+          <AccountCredentials
+            account={accounts.find(a => a.id === selectedAccountId)}
+            challengeMetadata={challengeMetadata}
+          />
+        </div>
+
+        {/* Stats Grid: Order 3 on Mobile, Bottom Right on Desktop */}
+        <div className="order-3 lg:order-none lg:col-span-2 xl:col-span-3 lg:col-start-2 lg:row-start-2 w-full">
+          {/* Stats — 2x2 grid (mobile) or 1x4 (xl) */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4 w-full">
+            <StatCard
+              title="Balance"
+              value={`$${stats.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+              color="green"
+              icon={DollarSign}
+            />
+            {/* Profit/Loss with percentage badge */}
+            <motion.div
+              variants={itemVariants}
+              className="glass-card p-4 border-border-subtle hover:glow-green transition-shadow duration-300 flex flex-col justify-center"
+              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            >
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-text-secondary" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                  Profit/Loss
+                </span>
+                {(() => {
+                  const pnlPct = ((stats.equity - challengeMetadata.initialBalance) / challengeMetadata.initialBalance * 100);
+                  const isProfit = pnlPct >= 0;
+                  return (
+                    <span className={`text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isProfit ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/30" : "bg-red-400/10 text-red-400 border border-red-400/30"}`}>
+                      {isProfit ? "+" : ""}{pnlPct.toFixed(2)}%
+                    </span>
+                  );
+                })()}
+              </div>
+              <p className={`text-base sm:text-xl font-bold truncate ${(stats.equity - challengeMetadata.initialBalance) >= 0 ? "text-neon-green" : "text-neon-red"}`} style={{ fontFamily: "var(--font-orbitron)" }}>
+                {(stats.equity - challengeMetadata.initialBalance) >= 0 ? "+" : ""}${Math.abs(stats.equity - challengeMetadata.initialBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </p>
+            </motion.div>
+            {/* Floating Loss */}
+            {(() => {
+              const floatingPnl = Number(accounts.find(a => a.id === selectedAccountId)?.floating_pnl) || 0;
+              const hasPositions = floatingPnl !== 0;
+              return (
+                <StatCard
+                  title="Floating Loss"
+                  value={hasPositions ? `${floatingPnl >= 0 ? "+" : ""}$${Math.abs(floatingPnl).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "$0"}
+                  subtitle={hasPositions ? "Posiciones abiertas" : "Sin posiciones abiertas"}
+                  color={floatingPnl < 0 ? "red" : "blue"}
+                  icon={Activity}
+                />
+              );
+            })()}
+            {/* Trading Days */}
+            <motion.div
+              variants={itemVariants}
+              className="glass-card p-4 border-border-subtle hover:glow-blue transition-shadow duration-300 flex flex-col justify-center"
+              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            >
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-text-secondary truncate" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                  Trading Days
+                </span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 rounded-lg bg-neon-blue/5 flex items-center justify-center">
+                  <CalendarDays className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neon-blue" />
                 </div>
-                <p className="text-[11px] text-text-muted mt-1">{Math.round(xpProgress)}% hacia el siguiente checkpoint</p>
-              </>
-            )}
+              </div>
+              <p className="text-base sm:text-xl font-bold text-neon-blue truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
+                {accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
+              </p>
+            </motion.div>
           </div>
         </div>
-      </motion.div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Balance Total"
-          value={`$${stats.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-          subtitle={challengeMetadata.type === 'express_1phase'
-            ? `Objetivo Fase Única: +10%`
-            : challengeMetadata.type === 'classic_2phase' 
-              ? `Objetivo Fase ${challengeMetadata.phase}: +${challengeMetadata.profitTargetPct}%`
-              : `Objetivo Checkpoint: +20% -> $${(challengeMetadata.initialBalance * 1.2).toLocaleString("en-US")}`
-          }
-          color="green"
-          icon={DollarSign}
-        />
-        <StatCard
-          title="Equidad Actual"
-          value={`$${stats.equity.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-          color={stats.equity >= stats.balance ? "blue" : "red"}
-          icon={Activity}
-        />
-        <StatCard
-          title="P&L de Hoy"
-          value={`${stats.todayPnl >= 0 ? '+' : ''}$${stats.todayPnl.toFixed(2)}`}
-          subtitle={challengeMetadata.type === 'classic_2phase' ? "Límite Diario: 5%" : "Checkpoint Progress"}
-          color={stats.todayPnl >= 0 ? "green" : "red"}
-          icon={stats.todayPnl >= 0 ? TrendingUp : TrendingDown}
-        />
-        <DrawdownGauge current={stats.dailyDrawdown} max={stats.maxDailyDrawdown} />
       </div>
 
-      {/* Middle Section: Chart */}
+      {/* Trading Objectives */}
+      <TradingObjectives
+        dailyDrawdownPct={accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4}
+        maxDrawdownPct={stats.maxDailyDrawdown}
+        currentDailyDD={stats.dailyDrawdown}
+        currentMaxDD={Math.max(0, ((challengeMetadata.initialBalance - Math.min(stats.balance, stats.equity)) / challengeMetadata.initialBalance) * 100)}
+        currentDailyLoss={Math.max(0, (accounts.find(a => a.id === selectedAccountId)?.daily_initial_balance || stats.balance) - stats.equity)}
+        maxDailyLossLimit={(accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4) / 100 * (accounts.find(a => a.id === selectedAccountId)?.daily_initial_balance || stats.balance)}
+        currentMaxLoss={Math.max(0, challengeMetadata.initialBalance - Math.min(stats.balance, stats.equity))}
+        maxLossLimit={(stats.maxDailyDrawdown / 100) * challengeMetadata.initialBalance}
+        tradingDaysCount={accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
+        minTradingDays={5}
+        profitTargetPct={challengeMetadata.profitTargetPct}
+        currentProfitPct={Number(((stats.equity - challengeMetadata.initialBalance) / challengeMetadata.initialBalance * 100).toFixed(2))}
+        currentProfit={Math.max(0, stats.equity - challengeMetadata.initialBalance)}
+        profitTarget={challengeMetadata.initialBalance * (challengeMetadata.profitTargetPct / 100)}
+        isFunded={challengeMetadata.isFunded}
+      />
+
+      {/* P&L Performance Chart */}
       <div className="mb-6">
-        <EquityChart data={mockEquityCurve} />
+        {realPnLData.length > 0 ? (
+          <PnLChart
+            dailyData={realPnLData}
+            initialBalance={challengeMetadata.initialBalance}
+            profitTargetPct={challengeMetadata.profitTargetPct}
+            maxDrawdownPct={challengeMetadata.type === 'express_1phase' ? 6 : stats.maxDailyDrawdown}
+          />
+        ) : (
+          <div className="relative bg-[#0d1424]/80 border border-white/[0.06] rounded-2xl p-8 text-center">
+            <div className="absolute -top-20 right-10 w-60 h-60 bg-emerald-500/[0.02] blur-[100px] rounded-full pointer-events-none" />
+            <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
+            <p className="text-sm text-white/30 font-medium" style={{ fontFamily: "var(--font-rajdhani)" }}>
+              {t("dashboard.pnlEmpty") || "La curva de rendimiento aparecerá cuando comiences a operar"}
+            </p>
+            <p className="text-[11px] text-white/15 mt-1">Conecta tu EA de MT5 para comenzar</p>
+          </div>
+        )}
       </div>
 
-      {/* Recent Trades */}
-      <RecentTrades trades={mockTrades} />
+      {/* Recent Trades — real data from database */}
+      <div className="mb-6">
+        <RecentTrades trades={realTrades} />
+      </div>
 
-      {/* Floating Payout Timer (Only visible when funded AND in profit) */}
+      {/* Floating Payout / Withdraw Section (Only visible when funded AND in profit) */}
       {challengeMetadata.isFunded && stats.equity > challengeMetadata.initialBalance && (
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 1.5, duration: 0.5 }}
-          className="fixed bottom-6 right-6 glass-card px-5 py-3 border-neon-green/40 glow-green z-50"
+          className="fixed bottom-4 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6 glass-card px-5 py-3 border-neon-green/40 glow-green z-50 flex items-center justify-center sm:justify-start"
         >
-          <div className="flex items-center gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-neon-green font-semibold">Próximo Pago</p>
-              <p className="text-lg font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-                {timeToPayout}
-              </p>
-            </div>
-            <motion.div
-              className="w-9 h-9 rounded-full bg-neon-green/20 flex items-center justify-center"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+          {timeToPayout === t("dashboard.readyForPayout") ? (
+            <motion.button
+              onClick={() => setShowWithdrawModal(true)}
+              className="flex items-center gap-3 group"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Clock className="w-4 h-4 text-neon-green" />
-            </motion.div>
-          </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-neon-green font-semibold">{t("dashboard.readyForPayout")}</p>
+                <p className="text-sm font-bold text-white" style={{ fontFamily: "var(--font-orbitron)" }}>
+                  {t("dashboard.withdrawBtn")}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-neon-green/20 flex items-center justify-center border border-neon-green/40 group-hover:bg-neon-green/30 transition-all shadow-[0_0_15px_rgba(57,255,20,0.3)]">
+                <Wallet className="w-5 h-5 text-neon-green" />
+              </div>
+            </motion.button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-neon-green font-semibold">{t("dashboard.payout.nextPayout")}</p>
+                <p className="text-lg font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
+                  {timeToPayout}
+                </p>
+              </div>
+              <motion.div
+                className="w-9 h-9 rounded-full bg-neon-green/20 flex items-center justify-center"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Clock className="w-4 h-4 text-neon-green" />
+              </motion.div>
+            </div>
+          )}
         </motion.div>
+      )}
+
+      {/* Withdraw Modal */}
+      {selectedAccountId && (
+        <WithdrawModal
+          isOpen={showWithdrawModal}
+          onClose={() => setShowWithdrawModal(false)}
+          accountId={selectedAccountId}
+          profit={Math.max(0, stats.equity - challengeMetadata.initialBalance)}
+          profitSplitPct={challengeMetadata.profitSplitPct}
+          initialBalance={challengeMetadata.initialBalance}
+          tradingDaysCount={accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
+          hasWeeklyPayouts={accounts.find(a => a.id === selectedAccountId)?.has_weekly_payouts || false}
+        />
       )}
 
 

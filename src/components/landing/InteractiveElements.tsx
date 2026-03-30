@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useInView, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { DollarSign, Trophy, Anchor, Zap, Flame, Crown, Diamond } from "lucide-react";
 
 /* ============================================
    ANIMATED COUNTER
@@ -145,6 +147,7 @@ export function FloatingParticles() {
    3D INTERACTIVE EQUITY CHART CARD
    ============================================ */
 export function EquityChart3D() {
+  const { t } = useLanguage();
   const points = [20, 25, 22, 35, 30, 45, 40, 55, 50, 65, 60, 75, 70, 82, 78, 90, 85, 95];
   const width = 400;
   const height = 200;
@@ -242,14 +245,14 @@ export function EquityChart3D() {
 
           <div className="flex items-center justify-between mb-4 relative z-10">
             <div>
-              <p className="text-text-muted text-[10px] uppercase tracking-wider">Valor del Portafolio</p>
+              <p className="text-text-muted text-[10px] uppercase tracking-wider">{t("interactive.portfolioValue")}</p>
               <p className="text-2xl font-black text-neon-green" style={{ fontFamily: "var(--font-orbitron)" }}>
                 $24,891.40
               </p>
             </div>
             <div className="text-right">
               <p className="text-neon-green text-sm font-bold">+148.9%</p>
-              <p className="text-text-muted text-[10px]">Total</p>
+              <p className="text-text-muted text-[10px]">{t("interactive.total")}</p>
             </div>
           </div>
 
@@ -267,21 +270,21 @@ export function EquityChart3D() {
 
           <div className="flex items-center gap-6 mt-3 relative z-10">
             <div>
-              <p className="text-text-muted text-[9px] uppercase">Tasa de Éxito</p>
+              <p className="text-text-muted text-[9px] uppercase">{t("interactive.winRate")}</p>
               <p className="text-text-primary text-xs font-bold">72.4%</p>
             </div>
             <div>
-              <p className="text-text-muted text-[9px] uppercase">Factor de Ganancia</p>
+              <p className="text-text-muted text-[9px] uppercase">{t("interactive.profitFactor")}</p>
               <p className="text-text-primary text-xs font-bold">2.8</p>
             </div>
             <div>
-              <p className="text-text-muted text-[9px] uppercase">Checkpoint</p>
+              <p className="text-text-muted text-[9px] uppercase">{t("interactive.level")}</p>
               <p className="text-neon-green text-xs font-bold">2 / 3</p>
             </div>
           </div>
 
           <div className="absolute bottom-2 right-3 text-text-muted/40 text-[9px] flex items-center gap-1 z-10">
-            <span>Clic para voltear</span>
+            <span>{t("interactive.clickToFlip")}</span>
             <span>↻</span>
           </div>
         </div>
@@ -295,36 +298,31 @@ export function EquityChart3D() {
           <div className="relative z-10 h-full flex flex-col justify-between">
             <div>
               <p className="text-neon-green text-[10px] uppercase tracking-widest font-bold" style={{ fontFamily: "var(--font-orbitron)" }}>
-                ¿POR QUÉ FUNDED SPREAD?
+                {t("interactive.whyTitle")}
               </p>
               <h3 className="text-text-primary text-lg font-bold mt-2 leading-tight">
-                Capital real. Ganancias reales. Sin riesgo personal.
+                {t("interactive.whyDesc")}
               </h3>
             </div>
 
             <div className="space-y-2.5 my-4">
-              {[
-                { text: "Cuentas fondeadas desde", highlight: "$10K hasta $100K", color: "text-neon-green" },
-                { text: "Hasta", highlight: "90% de split", color: "text-neon-green" },
-                { text: "Pagos con", highlight: "cripto o transferencia", color: "text-neon-green" },
-                { text: "Sin", highlight: "límite de tiempo", color: "text-neon-green" },
-              ].map((item, i) => (
+              {Array.isArray(t("interactive.list")) && (t("interactive.list") as unknown as any[]).map((item: any, i: number) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <div className="w-6 h-6 rounded-full bg-neon-green/10 flex items-center justify-center flex-shrink-0">
                     <span className="text-neon-green text-xs">✓</span>
                   </div>
-                  <p className="text-text-secondary text-xs">{item.text} <span className={`${item.color} font-bold`}>{item.highlight}</span></p>
+                  <p className="text-text-secondary text-xs">{item.text} <span className="text-neon-green font-bold">{item.highlight}</span></p>
                 </div>
               ))}
             </div>
 
             <div className="border-t border-neon-green/20 pt-3">
-              <p className="text-text-muted text-[10px] italic">&quot;En 3 meses pasé de $49 a una cuenta fondeada de $50K.&quot;</p>
-              <p className="text-neon-green text-[10px] font-bold mt-1">— @CryptoPhantom, Trader Legend</p>
+              <p className="text-text-muted text-[10px] italic">{t("interactive.testimonial")}</p>
+              <p className="text-neon-green text-[10px] font-bold mt-1">{t("interactive.testimonialAuthor")}</p>
             </div>
 
             <div className="absolute bottom-2 right-3 text-text-muted/40 text-[9px] flex items-center gap-1">
-              <span>Clic para volver</span>
+              <span>{t("interactive.clickToReturn")}</span>
               <span>↻</span>
             </div>
           </div>
@@ -338,18 +336,29 @@ export function EquityChart3D() {
    SOCIAL PROOF TICKER
    ============================================ */
 const tickerItems = [
-  { icon: "💰", text: "@TradeMaster42 retiró $4,200" },
-  { icon: "🏆", text: "@AlphaFX superó el Checkpoint 2" },
-  { icon: "🚀", text: "@NeonKing desbloqueó cuenta de $50K" },
-  { icon: "💎", text: "@CryptoWolf ganó $8,750 este mes" },
-  { icon: "⚡", text: "@DayTrader_Pro alcanzó 90% de ganancias" },
-  { icon: "🔥", text: "@FXMaster completó el reto Legend" },
-  { icon: "💰", text: "@SwingTrader retiró $12,400" },
-  { icon: "🏆", text: "@NeonElite superó todos los Checkpoints" },
+  { icon: <DollarSign className="w-4 h-4 text-neon-green/80" />, text: "@TradeMaster42 retiró $4,200" },
+  { icon: <Trophy className="w-4 h-4 text-yellow-400" />, text: "@AlphaFX superó el Nivel 2" },
+  { icon: <Zap className="w-4 h-4 text-neon-cyan" />, text: "@NeonKing desbloqueó cuenta de $50K" },
+  { icon: <Diamond className="w-4 h-4 text-blue-400" />, text: "@CryptoWolf ganó $8,750 este mes" },
+  { icon: <Flame className="w-4 h-4 text-rose-500" />, text: "@DayTrader_Pro alcanzó 90% de profit split" },
+  { icon: <Crown className="w-4 h-4 text-purple-400" />, text: "@FXMaster completó el reto Legend" },
+  { icon: <DollarSign className="w-4 h-4 text-neon-green/80" />, text: "@SwingTrader retiró $12,400" },
+  { icon: <Trophy className="w-4 h-4 text-yellow-400" />, text: "@NeonElite superó todos los Niveles" },
 ];
 
 export function SocialProofTicker() {
-  const duplicatedItems = [...tickerItems, ...tickerItems];
+  const { t } = useLanguage();
+  let items = tickerItems;
+  try {
+    const rawTicker = t("interactive.ticker");
+    if (Array.isArray(rawTicker)) {
+      items = rawTicker.map((item, i) => ({
+        icon: tickerItems[i % tickerItems.length].icon, // Use SVG map
+        text: item.text
+      }));
+    }
+  } catch(e) {}
+  const duplicatedItems = [...items, ...items];
 
   return (
     <div className="relative overflow-hidden py-8 border-y border-border-subtle/30 bg-bg-secondary/40 mt-12">
@@ -364,10 +373,12 @@ export function SocialProofTicker() {
         {duplicatedItems.map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:border-white/10 hover:bg-white/[0.04] hover:-translate-y-0.5 transition-all cursor-default group"
+            className="flex items-center gap-2.5 sm:gap-3 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:border-white/10 hover:bg-white/[0.04] hover:-translate-y-0.5 transition-all cursor-default group"
           >
-            <span className="text-lg group-hover:scale-110 transition-transform duration-300">{item.icon}</span>
-            <span className="text-text-secondary text-[11px] uppercase tracking-wider font-semibold group-hover:text-text-primary transition-colors duration-300">
+            <div className="flex items-center justify-center p-1.5 rounded-full bg-black/40 border border-white/5 group-hover:bg-white/10 group-hover:border-white/20 transition-all duration-300">
+              {item.icon}
+            </div>
+            <span className="text-text-secondary text-[9px] sm:text-[11px] uppercase tracking-wider font-semibold group-hover:text-text-primary transition-colors duration-300">
               {item.text}
             </span>
           </div>

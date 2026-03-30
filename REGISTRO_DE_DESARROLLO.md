@@ -237,3 +237,46 @@ Servidor en **http://localhost:3000**
 
 ### 🔜 Próxima Fase (Fase M):
 - AWS / VPS setup para automatizar la asignación del Headless MT5 y enlazarlo con el webhook recién extendido.
+
+---
+
+## 📅 2026-03-26 — Estandarización de Reglas + Rediseño Checkout + Auditoría de Textos
+
+### ✅ Estandarización Competitiva (FundedNext benchmark):
+- **Express 1-Phase:** Target 10% | 3% Daily DD | 5% Max DD | 2 días mínimos.
+- **Classic 2-Phase:** Fase 1: 8% / Fase 2: 5% | 4% Daily DD | 10% Max DD | 5 días mínimos.
+
+### ✅ Sistema de Add-ons Híbrido:
+- **Trading Add-ons:** Raw Spread (+10%), Cero Comisiones (+10%), Payouts Semanales (+15%), Escalamiento x2 (+25%).
+- **Profit Split Add-ons:** 90% Split (+15% precio), 100% Split (+30% precio).
+- Ambos aditivos al precio base, persistidos en `challenge_transactions` y `mt5_accounts`.
+
+### ✅ Rediseño UX/UI del Checkout:
+- **Add-ons:** Toggle switches estilo iOS con emojis (⚡💎🚀🔥) en lista compacta vertical.
+- **Profit Split:** Selector de 3 columnas horizontales (80% Base / 90% Premium / 100% Élite) con tipografía Orbitron prominente.
+
+### ✅ Corrección de URLs de Pago:
+- `create-invoice/route.ts`: Actualizado para apuntar a `https://www.funded-spread.com` en lugar de `localhost:3000` o `your-domain.com`.
+
+### ✅ Auditoría Completa de Textos (16 correcciones):
+| Archivo | Cambio |
+|---------|--------|
+| `Sections.tsx` (Hero) | `$100,000` → `$200,000`, `90%` → `100%`, `Cero riesgo` → `Sin arriesgar tu dinero` |
+| `Sections.tsx` (Stats) | `90% Ganancia Máxima` → `100% Profit Split Máx.` |
+| `Sections.tsx` (Protocol) | `hasta el 90%` → `hasta el 100%` |
+| `Sections.tsx` (FinalCTA) | `$10,000` → `hasta $200,000`, `Sin experiencia requerida` → `Sin capital propio` |
+| `Sections.tsx` (Navbar) | Eliminado enlace FAQ inexistente |
+| `Sections.tsx` (Levels) | `Supera checkpoints` → `Supera objetivos`, `90% reparto` → `90% (o compra hasta 100%)` |
+| `InteractiveElements.tsx` (Ticker) | `Checkpoint` → `Nivel` (×2), `90% ganancias` → `100% profit split` |
+| `InteractiveElements.tsx` (3D Card) | Back: `$10K-$100K` → `$5K-$200K`, `90% split` → `100%`, `cripto o transferencia` → `cripto (BTC, USDT)`. Front: `Checkpoint` → `Nivel` |
+| `layout.tsx` | Meta description traducida al español, `lang="en"` → `lang="es"` |
+
+### 🐛 Bugs Corregidos:
+- Toggle switches de Add-ons no funcionaban (faltaba `<input type="checkbox">` hidden).
+- Botón "Ver cómo funciona" no hacía nada (se añadió `scrollIntoView` hacia `#protocol`).
+- Referencias desactualizadas al precio base ($49 → $35) en Hero y tarjeta 3D.
+
+### 🔜 Próximos Pasos:
+- Pruebas E2E de pago completo en producción (www.funded-spread.com).
+- Verificar persistencia de add-ons en la base de datos tras pago exitoso.
+- Crear sección FAQ real si se necesita en el futuro.

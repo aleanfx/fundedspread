@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Lock, Eye, EyeOff, User, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { FundedSpreadLogo } from "@/components/FundedSpreadLogo";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const backdropVariants = {
     hidden: { opacity: 0 },
@@ -50,6 +51,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose, initialTab = "login" }: AuthModalProps) {
+    const { t } = useLanguage();
     const router = useRouter();
     const supabase = createClient();
     const [tab, setTab] = useState<"login" | "register">(initialTab);
@@ -60,6 +62,15 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showScanLine, setShowScanLine] = useState(false);
+    const [isAppleDevice, setIsAppleDevice] = useState(false);
+
+    // Detect Apple devices to optionally show Apple login
+    useEffect(() => {
+        const platform = navigator?.platform || navigator?.userAgent || "";
+        if (/Mac|iPhone|iPod|iPad/i.test(platform)) {
+            setIsAppleDevice(true);
+        }
+    }, []);
 
     const resetForm = () => {
         setEmail("");
@@ -131,6 +142,10 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
         }
     };
 
+    const handleAppleAuth = async () => {
+        alert(t("auth.appleComingSoon") || "El inicio de sesión con Apple estará disponible próximamente.");
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -199,17 +214,17 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
 
                             {/* Tab switcher */}
                             <div className="flex rounded-lg bg-white/5 border border-border-subtle p-1 mb-6">
-                                {(["login", "register"] as const).map((t) => (
+                                {(["login", "register"] as const).map((tabId) => (
                                     <button
-                                        key={t}
-                                        className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${tab === t
-                                            ? "bg-neon-green text-white shadow-lg shadow-neon-green/20"
+                                        key={tabId}
+                                        className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${tab === tabId
+                                            ? "bg-neon-green text-bg-primary shadow-lg shadow-neon-green/20"
                                             : "text-text-muted hover:text-text-primary"
                                             }`}
                                         style={{ fontFamily: "var(--font-orbitron)" }}
-                                        onClick={() => handleTabSwitch(t)}
+                                        onClick={() => handleTabSwitch(tabId)}
                                     >
-                                        {t === "login" ? "Iniciar Sesión" : "Registrarse"}
+                                        {tabId === "login" ? t("auth.loginTab") : t("auth.registerTab")}
                                     </button>
                                 ))}
                             </div>
@@ -239,7 +254,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                                                 <input
                                                     type="text"
-                                                    placeholder="Nombre Completo"
+                                                    placeholder={t("auth.fullName")}
                                                     value={fullName}
                                                     onChange={(e) => setFullName(e.target.value)}
                                                     className="w-full pl-11 pr-4 py-3 bg-white/5 border border-border-subtle rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-green/50 transition-colors"
@@ -254,7 +269,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                                         <input
                                             type="email"
-                                            placeholder="Correo Electrónico"
+                                            placeholder={t("auth.email")}
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="w-full pl-11 pr-4 py-3 bg-white/5 border border-border-subtle rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-green/50 transition-colors"
@@ -267,7 +282,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                                         <input
                                             type={showPassword ? "text" : "password"}
-                                            placeholder="Contraseña"
+                                            placeholder={t("auth.password")}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             className="w-full pl-11 pr-11 py-3 bg-white/5 border border-border-subtle rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-neon-green/50 transition-colors"
@@ -287,18 +302,18 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                                 {/* Submit button */}
                                 <motion.button
                                     type="submit"
-                                    className="w-full mt-5 py-3.5 rounded-lg bg-neon-green text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-neon-green/80 transition-all disabled:opacity-50"
+                                    className="w-full mt-5 py-3.5 rounded-lg bg-neon-green text-bg-primary font-bold text-sm flex items-center justify-center gap-2 hover:bg-neon-green/80 transition-all disabled:opacity-50"
                                     style={{ fontFamily: "var(--font-orbitron)" }}
                                     whileHover={{ scale: 1.01 }}
                                     whileTap={{ scale: 0.99 }}
                                     disabled={loading}
                                 >
                                     {loading ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="w-4 h-4 animate-spin text-bg-primary" />
                                     ) : (
                                         <>
-                                            {tab === "login" ? "ACCEDER" : "CREAR CUENTA"}
-                                            <ArrowRight className="w-4 h-4" />
+                                            {tab === "login" ? t("auth.loginBtn") : t("auth.registerBtn")}
+                                            <ArrowRight className="w-4 h-4 text-bg-primary" />
                                         </>
                                     )}
                                 </motion.button>
@@ -307,7 +322,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                             {/* Divider */}
                             <div className="flex items-center gap-3 my-5">
                                 <div className="flex-1 h-px bg-border-subtle" />
-                                <span className="text-text-muted text-[10px] uppercase tracking-widest">o</span>
+                                <span className="text-text-muted text-[10px] uppercase tracking-widest">{t("auth.or")}</span>
                                 <div className="flex-1 h-px bg-border-subtle" />
                             </div>
 
@@ -325,12 +340,14 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }: Aut
                                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                 </svg>
-                                Continuar con Google
+                                {t("auth.google")}
                             </motion.button>
+
+
 
                             {/* Footer text */}
                             <p className="mt-5 text-center text-text-muted text-[10px] uppercase tracking-wider">
-                                Seguro · Encriptado · <span className="text-neon-green">En Línea</span>
+                                {t("auth.footerPlain")} <span className="text-neon-green">{t("auth.footerNeon")}</span>
                             </p>
 
                             {/* Bottom accent line */}

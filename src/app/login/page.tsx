@@ -191,7 +191,7 @@ export default function LoginPage() {
                         <motion.button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-lg bg-neon-green text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-neon-green/80 transition-all disabled:opacity-50"
+                            className="w-full py-3 rounded-lg bg-neon-green text-bg-primary text-sm font-bold flex items-center justify-center gap-2 hover:bg-neon-green/80 transition-all disabled:opacity-50"
                             style={{ fontFamily: "var(--font-orbitron)" }}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}

@@ -10,6 +10,7 @@ import {
     ArrowDownRight,
     Calendar,
 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /* ============================================
    ANIMATION VARIANTS
@@ -241,6 +242,7 @@ function EquityCurve({ data }: { data: typeof equityData }) {
    MAIN ANALYTICS PAGE
    ============================================ */
 export default function AnalyticsPage() {
+    const { t } = useLanguage();
     const totalEquity = equityData[equityData.length - 1].value;
 
     return (
@@ -257,7 +259,7 @@ export default function AnalyticsPage() {
                         className="text-3xl font-bold text-text-primary"
                         style={{ fontFamily: "var(--font-orbitron)" }}
                     >
-                        Resumen de Análisis
+                        {t("analytics.summaryTitle")}
                     </h1>
                     <p className="text-text-muted text-sm mt-1" style={{ fontFamily: "var(--font-rajdhani)" }}>
                         Sesión ID: <span className="text-neon-green">WSS-X24</span>
@@ -265,10 +267,10 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex gap-2">
                     <button className="px-4 py-2 rounded-lg text-xs font-medium bg-white/5 border border-border-subtle text-text-secondary hover:bg-white/10 transition-all">
-                        Últimos 30 Días
+                        {t("analytics.last30Days")}
                     </button>
                     <button className="px-4 py-2 rounded-lg text-xs font-medium bg-neon-green/10 border border-neon-green/30 text-neon-green hover:bg-neon-green/20 transition-all flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" /> Exportar Datos
+                        <Calendar className="w-3.5 h-3.5" /> {t("analytics.exportData")}
                     </button>
                 </div>
             </motion.div>
@@ -278,7 +280,7 @@ export default function AnalyticsPage() {
                 {/* Win Rate */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>Tasa Éxito</p>
+                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("analytics.winRate")}</p>
                         <div className="w-8 h-8 rounded-lg bg-neon-green/10 flex items-center justify-center">
                             <Target className="w-4 h-4 text-neon-green" />
                         </div>
@@ -301,7 +303,7 @@ export default function AnalyticsPage() {
                 {/* Profit Factor */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>Factor de Ganancia</p>
+                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("analytics.profitFactor")}</p>
                         <div className="w-8 h-8 rounded-lg bg-neon-blue/10 flex items-center justify-center">
                             <TrendingUp className="w-4 h-4 text-neon-blue" />
                         </div>
@@ -324,7 +326,7 @@ export default function AnalyticsPage() {
                 {/* Avg RRR */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>RRR Prom.</p>
+                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("analytics.avgRrr")}</p>
                         <div className="w-8 h-8 rounded-lg bg-neon-purple/10 flex items-center justify-center">
                             <BarChart3 className="w-4 h-4 text-neon-purple" />
                         </div>
@@ -339,7 +341,7 @@ export default function AnalyticsPage() {
                 {/* Total Trades */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>Total Operaciones</p>
+                        <p className="text-text-muted text-xs uppercase tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>{t("analytics.totalTrades")}</p>
                         <div className="w-8 h-8 rounded-lg bg-neon-cyan/10 flex items-center justify-center">
                             <Activity className="w-4 h-4 text-neon-cyan" />
                         </div>
@@ -366,7 +368,7 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-sm font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-                                Curva de Equidad
+                                {t("analytics.equityCurve")}
                             </h3>
                             <p className="text-xl font-bold text-neon-green mt-1" style={{ fontFamily: "var(--font-orbitron)" }}>
                                 ${totalEquity.toLocaleString()}
@@ -392,7 +394,7 @@ export default function AnalyticsPage() {
                 {/* Trader DNA Radar */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <h3 className="text-sm font-bold text-text-primary mb-1" style={{ fontFamily: "var(--font-orbitron)" }}>
-                        ADN del Trader
+                        {t("analytics.traderDna")}
                     </h3>
                     <p className="text-[10px] text-neon-purple uppercase tracking-wider mb-3">Top 8% Rendimiento</p>
                     <RadarChart attributes={radarAttributes} />
@@ -414,7 +416,7 @@ export default function AnalyticsPage() {
                 {/* Win/Loss Distribution */}
                 <div className="glass-card p-5 border border-border-subtle">
                     <h3 className="text-sm font-bold text-text-primary mb-4" style={{ fontFamily: "var(--font-orbitron)" }}>
-                        Distribución Ganancias/Pérdidas
+                        {t("analytics.winLossDist")}
                     </h3>
                     <div className="flex items-end justify-between gap-2 h-[140px]">
                         {winLossData.map((d, i) => {
@@ -456,7 +458,7 @@ export default function AnalyticsPage() {
                 <div className="lg:col-span-2 glass-card p-5 border border-border-subtle">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-                            Sesiones Recientes de Trading
+                            {t("analytics.recentSessions")}
                         </h3>
                         <button className="text-neon-green text-[10px] font-bold uppercase tracking-wider hover:text-neon-green/80 transition-colors">
                             Ver Todas

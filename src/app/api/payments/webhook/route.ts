@@ -68,6 +68,26 @@ export async function POST(request: Request) {
 
             // 3. Create the trader's MT5 account (activate the challenge)
             const accountSize = CHALLENGE_SIZES[transaction.challenge_tier] || 10000;
+            const challengeType = transaction.challenge_type || "classic_2phase";
+
+            // Calculate drawdown limits based on challenge type and tier
+            let dailyDDPct = 4; // Default for Classic
+            let maxDDPct = 10;  // Default for Classic
+            let profitTargetPct = 8; // Default for Classic Phase 1
+
+            if (challengeType === "express_1phase") {
+                dailyDDPct = 3;
+                maxDDPct = 5;
+                profitTargetPct = 10;
+            }
+
+            // Determine Profit Split
+            let profitSplitPct = 80; // Base Split
+            if (transaction.addon_split_100) {
+                profitSplitPct = 90;
+            } else if (transaction.addon_split_90) {
+                profitSplitPct = 85;
+            }
 
             const { error: accountError } = await supabaseAdmin
                 .from("mt5_accounts")
@@ -76,18 +96,23 @@ export async function POST(request: Request) {
                     initial_balance: accountSize,
                     current_balance: 0,
                     current_equity: 0,
-                    daily_initial_balance: 0,
+                    daily_initial_balance: accountSize,
                     is_active: false,
                     account_status: "pending_creation",
                     challenge_tier: transaction.challenge_tier,
-                    challenge_type: transaction.challenge_type || "classic_2phase",
+                    challenge_type: challengeType,
                     challenge_phase: 1,
-                    profit_target_pct: (transaction.challenge_type === "express_1phase") ? 10 : 8,
+                    profit_target_pct: profitTargetPct,
+                    daily_drawdown_pct: dailyDDPct,
+                    max_drawdown_pct: maxDDPct,
+                    profit_split_pct: profitSplitPct,
                     can_level_up: false,
                     has_raw_spread: transaction.has_raw_spread || false,
                     has_zero_commission: transaction.has_zero_commission || false,
                     has_weekly_payouts: transaction.has_weekly_payouts || false,
                     has_scaling_x2: transaction.has_scaling_x2 || false,
+                    addon_split_90: transaction.addon_split_90 || false,
+                    addon_split_100: transaction.addon_split_100 || false,
                 });
 
             if (accountError) {

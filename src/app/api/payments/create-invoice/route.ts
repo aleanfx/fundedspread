@@ -14,18 +14,18 @@ const supabaseAdmin = createClient(
 
 const NOWPAYMENTS_API = "https://api.nowpayments.io/v1";
 
-const CHALLENGE_PRICES: Record<string, { price: number; accountSize: number }> = {
-    micro: { price: 39, accountSize: 5000 },
-    starter: { price: 49, accountSize: 10000 },
-    pro: { price: 99, accountSize: 25000 },
-    elite: { price: 199, accountSize: 50000 },
-    legend: { price: 499, accountSize: 100000 },
-    titan: { price: 999, accountSize: 200000 },
+const CHALLENGE_PRICES: Record<string, { price: number; expressPrice: number; accountSize: number }> = {
+    micro: { price: 35, expressPrice: 57, accountSize: 5000 },
+    starter: { price: 56, expressPrice: 98, accountSize: 10000 },
+    pro: { price: 135, expressPrice: 215, accountSize: 25000 },
+    elite: { price: 225, expressPrice: 315, accountSize: 50000 },
+    legend: { price: 389, expressPrice: 549, accountSize: 100000 },
+    apex: { price: 789, expressPrice: 1089, accountSize: 200000 },
 };
 
 export async function POST(request: Request) {
     try {
-        const { challengeTier, challengeType, userId, userEmail, hasRawSpread, hasZeroCommission, hasWeeklyPayouts, hasScalingX2 } = await request.json();
+        const { challengeTier, challengeType, userId, userEmail, addonRawSpread, addonZeroCommission, addonWeeklyPayouts, addonScalingX2, addonSplit90, addonSplit100 } = await request.json();
 
         if (!challengeTier || !userId) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -36,10 +36,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid challenge tier" }, { status: 400 });
         }
 
-        const basePrice = challengeType === "express_1phase" ? Math.round(tierConfig.price * 1.2) : tierConfig.price;
+        const basePrice = challengeType === "express_1phase" ? tierConfig.expressPrice : tierConfig.price;
 
         // Calculate final price with Add-ons
-        const finalPrice = Number((basePrice * (1 + (hasRawSpread ? 0.1 : 0) + (hasZeroCommission ? 0.15 : 0) + (hasWeeklyPayouts ? 0.2 : 0) + (hasScalingX2 ? 0.2 : 0))).toFixed(2));
+        const finalPrice = Number((basePrice * (1 + (addonRawSpread ? 0.10 : 0) + (addonZeroCommission ? 0.10 : 0) + (addonWeeklyPayouts ? 0.15 : 0) + (addonScalingX2 ? 0.25 : 0) + (addonSplit90 ? 0.10 : 0) + (addonSplit100 ? 0.20 : 0))).toFixed(2));
 
         // 1. Create invoice on NOWPayments
         const invoiceRes = await fetch(`${NOWPAYMENTS_API}/invoice`, {
@@ -53,9 +53,9 @@ export async function POST(request: Request) {
                 price_currency: "usd",
                 order_id: `challenge_${challengeTier}_${userId.slice(0, 8)}_${Date.now()}`,
                 order_description: `Funded Spread ${challengeTier.toUpperCase()} Challenge - $${tierConfig.accountSize.toLocaleString()} Account with Add-ons`,
-                ipn_callback_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com' : 'http://localhost:3000'}/api/payments/webhook`,
-                success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout?status=success`,
-                cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout?status=cancel`,
+                ipn_callback_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.funded-spread.com'}/api/payments/webhook`,
+                success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.funded-spread.com'}/checkout?status=success`,
+                cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.funded-spread.com'}/checkout?status=cancel`,
             }),
         });
 
@@ -79,10 +79,12 @@ export async function POST(request: Request) {
                 status: "pending",
                 payment_method: "crypto",
                 nowpayments_invoice_id: String(invoiceData.id),
-                has_raw_spread: Boolean(hasRawSpread),
-                has_zero_commission: Boolean(hasZeroCommission),
-                has_weekly_payouts: Boolean(hasWeeklyPayouts),
-                has_scaling_x2: Boolean(hasScalingX2),
+                has_raw_spread: Boolean(addonRawSpread),
+                has_zero_commission: Boolean(addonZeroCommission),
+                has_weekly_payouts: Boolean(addonWeeklyPayouts),
+                has_scaling_x2: Boolean(addonScalingX2),
+                addon_split_90: Boolean(addonSplit90),
+                addon_split_100: Boolean(addonSplit100),
                 challenge_type: challengeType || "classic_2phase",
             });
 

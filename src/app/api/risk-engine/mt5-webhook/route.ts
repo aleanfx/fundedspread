@@ -20,6 +20,16 @@ interface MT5Payload {
     floating: number;
     timestamp: number;
     violation?: string;
+    // New fields for trade completion
+    trade?: {
+        symbol: string;
+        type: string;
+        lots: number;
+        entry: number;
+        exit: number;
+        pnl: number;
+        closed_at?: string;
+    };
 }
 
 // ============================================
@@ -143,7 +153,7 @@ export async function POST(request: Request) {
                 
                 if (challengeType === "express_1phase") {
                     // Logic for Express 1-Phase
-                     if (profitPct >= EXPRESS_CONFIG.profitTarget) {
+                     if (profitPct >= (account.profit_target_pct || 10)) {
                         shouldLevelUp = true;
                         newStatus = "funded";
                         console.log(`🏆 [MT5 Webhook] Cuenta ${body.login} pasó la Evaluación (+${profitPct.toFixed(1)}%). ¡CUENTA FONDEADA!`);
@@ -152,7 +162,7 @@ export async function POST(request: Request) {
                      // Logic for Classic 2-Phase and Scaling x2 (Unified Evaluation)
                     const phaseConfig = challengePhase === 1 ? CLASSIC_CONFIG.phase1 : CLASSIC_CONFIG.phase2;
     
-                    if (profitPct >= phaseConfig.profitTarget) {
+                    if (profitPct >= (account.profit_target_pct || phaseConfig.profitTarget)) {
                         if (challengePhase === 1) {
                             shouldLevelUp = true;
                             newStatus = "phase2_ready";
@@ -181,6 +191,7 @@ export async function POST(request: Request) {
         const updateData: Record<string, unknown> = {
             current_equity: body.equity,
             current_balance: body.balance,
+            floating_pnl: body.floating || 0,
             last_health_check: new Date().toISOString(),
             account_status: newStatus,
             is_active: isActive,
@@ -210,6 +221,45 @@ export async function POST(request: Request) {
 
         if (updateError) {
             console.error(`⚠️ [MT5 Webhook] Failed to update stats for ${body.login}:`, updateError);
+        }
+
+        // ====== RECORD DAILY SNAPSHOT ======
+        // We record the latest equity for the current day. 
+        // This will be used to build the P&L chart in the dashboard.
+        const todayStr = new Date().toISOString().split('T')[0];
+        const { error: snapshotError } = await supabaseAdmin
+            .from("daily_snapshots")
+            .upsert({
+                mt5_account_id: account.id,
+                date: todayStr,
+                equity: body.equity,
+                balance: body.balance
+            }, { onConflict: 'mt5_account_id,date' });
+
+        if (snapshotError) {
+            console.error(`⚠️ [MT5 Webhook] Failed to save daily snapshot for ${body.login}:`, snapshotError);
+        }
+
+        // ====== RECORD CLOSED TRADE ======
+        if (body.trade) {
+            const { error: tradeError } = await supabaseAdmin
+                .from("trade_history")
+                .insert({
+                    mt5_account_id: account.id,
+                    symbol: body.trade.symbol,
+                    type: body.trade.type,
+                    lots: body.trade.lots,
+                    entry_price: body.trade.entry,
+                    exit_price: body.trade.exit,
+                    pnl: body.trade.pnl,
+                    closed_at: body.trade.closed_at || new Date().toISOString()
+                });
+            
+            if (tradeError) {
+                console.error(`⚠️ [MT5 Webhook] Failed to record closed trade for ${body.login}:`, tradeError);
+            } else {
+                console.log(`📝 [MT5 Webhook] Trade guardado: ${body.trade.symbol} | PnL: $${body.trade.pnl}`);
+            }
         }
 
         // ====== RESPONDER AL EXPERT ADVISOR ======

@@ -8,16 +8,16 @@ const NO_SIDEBAR_ROUTES = ["/", "/login", "/register"];
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const hideSidebar = NO_SIDEBAR_ROUTES.includes(pathname);
+    const isPublicRoute = NO_SIDEBAR_ROUTES.includes(pathname) || pathname.startsWith("/certificate");
 
-    if (hideSidebar) {
+    if (isPublicRoute) {
         return <main className="min-h-screen">{children}</main>;
     }
 
     return (
         <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <main className="flex-1 overflow-y-auto w-full pt-16 md:pt-0">{children}</main>
         </div>
     );
 }

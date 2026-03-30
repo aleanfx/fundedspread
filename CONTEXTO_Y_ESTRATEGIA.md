@@ -1,6 +1,6 @@
 # 📌 CONTEXTO Y ESTRATEGIA — Funded Spread (Prop Firm)
 
-> **Última actualización:** 15 Marzo 2026  
+> **Última actualización:** 26 Marzo 2026  
 > **Objetivo:** Este archivo es la **biblia del proyecto**. Contiene el contexto completo del negocio, las decisiones estratégicas, la arquitectura técnica y las reglas de trading. Cualquier IA o desarrollador que lea este archivo debe entender el 100% del proyecto sin necesidad de leer código.
 
 ---
@@ -33,18 +33,31 @@ Trader paga Challenge ($49-$499) → 90-95% fracasa → Tarifas se acumulan
 ### Tipos de Challenge
 
 #### Opción A: Challenge Clásico 2 Fases (PREDETERMINADO)
-Modelo estándar de la industria, inspirado en FundedNext:
+Modelo estándar de la industria, inspirado en FundedNext Stellar 2-Step:
 
 | Métrica | Fase 1 | Fase 2 | Cuenta Fondeada |
 |---------|--------|--------|-----------------|
 | Objetivo de Profit | 8% | 5% | Sin límite |
-| Drawdown Diario | 5% | 5% | 5% |
+| Drawdown Diario | 4% | 4% | 4% |
 | Drawdown Máximo | 10% | 10% | 10% |
 | Días Mínimos | 5 | 5 | 5 |
 | Tiempo Límite | 30 días | 60 días | Ilimitado |
-| Profit Split | — | — | 80-90% |
+| Profit Split | — | — | 80% base (hasta 100%) |
 
-#### Opción B: Challenge de Escalamiento x2 (Checkpoints)
+#### Opción B: Challenge Express 1 Fase
+Ruta rápida al fondeo, inspirado en FundedNext Stellar 1-Step:
+
+| Métrica | Evaluación | Cuenta Fondeada |
+|---------|------------|----------------|
+| Objetivo de Profit | 10% | Sin límite |
+| Drawdown Diario | 3% | 3% |
+| Drawdown Máximo | 5% | 5% |
+| Días Mínimos | 2 | 2 |
+| Tiempo Límite | 30 días | Ilimitado |
+| Profit Split | — | 80% base (hasta 100%) |
+| Precio | +20% vs Clásico | — |
+
+#### Opción C: Challenge de Escalamiento x2 (Checkpoints)
 Sistema exclusivo de Funded Spread:
 
 | Checkpoint | Capital | Objetivo | Recompensa |
@@ -56,20 +69,34 @@ Sistema exclusivo de Funded Spread:
 
 **Regla de Protección:** Si rompes el drawdown en Nivel 3, bajas a Nivel 2 (no pierdes todo).
 
-### Precios (4 Tiers)
-| Tier | Precio | Capital | Profit Split |
-|------|--------|---------|-------------|
+### Precios (6 Tiers — Classic 2 Fases)
+| Tier | Precio | Capital | Profit Split Base |
+|------|--------|---------|------------------|
+| Micro | $35 | $5,000 | 80% |
 | Starter | $49 | $10,000 | 80% |
-| Pro | $99 | $25,000 | 85% |
-| Elite | $199 | $50,000 | 85% |
-| Legend | $499 | $100,000 | 90% |
+| Pro | $99 | $25,000 | 80% |
+| Elite | $199 | $50,000 | 80% |
+| Legend | $499 | $100,000 | 80% |
+| Apex | $999 | $200,000 | 80% |
 
-### Add-ons (Upselling)
+*Express 1 Fase: Precio = Clásico × 1.2 (ejemplo: Starter Express = $59)*
+
+### Add-ons de Trading (upselling, aditivos al precio)
 | Add-on | Incremento | Descripción |
 |--------|-----------|-------------|
-| Raw Spreads | +10% | Spreads institucionales |
-| Zero Commissions | +15% | Sin comisiones de trading |
-| Retiros Semanales | +20% | Payout cada 7 días (vs 30 standard) |
+| Raw Spread | +10% | Spreads desde 0.0 pips |
+| Cero Comisiones | +10% | $0 por lote operado |
+| Payouts Semanales | +15% | Retira cada 7 días (vs 14 estándar) |
+| Escalamiento x2 | +25% | Duplica el capital al escalar |
+
+### Add-ons de Profit Split (opcionales, aditivos al precio)
+| Add-on | Incremento | Profit Split Final |
+|--------|-----------|-------------------|
+| Base (incluido) | +0% | 80% |
+| Premium | +15% | 90% |
+| Élite | +30% | 100% |
+
+**Nota:** El trader también puede escalar su profit split orgánicamente: cada 3 retiros consecutivos sube +5% hasta un máximo de 90%. Si compra el add-on Premium o Élite, esta escalación no aplica.
 
 ---
 
