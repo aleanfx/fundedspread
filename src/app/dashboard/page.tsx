@@ -1172,11 +1172,11 @@ export default function DashboardPage() {
             currentDailyDD={0}
             currentMaxDD={0}
             currentDailyLoss={0}
-            maxDailyLossLimit={challengeMetadata.initialBalance * 0.04}
+            maxDailyLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4) / 100)}
             currentMaxLoss={0}
-            maxLossLimit={challengeMetadata.initialBalance * 0.10}
+            maxLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.max_drawdown_pct || 10) / 100)}
             tradingDaysCount={accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
-            minTradingDays={5}
+            minTradingDays={accounts.find(a => a.id === selectedAccountId)?.challenge_type === 'express_1phase' ? 2 : 5}
             profitTargetPct={challengeMetadata.profitTargetPct}
             currentProfitPct={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0) / challengeMetadata.initialBalance * 100}
             currentProfit={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0)}
