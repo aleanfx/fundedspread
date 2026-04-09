@@ -90,6 +90,41 @@ export async function POST(request: Request) {
                     .update({ last_withdrawal_at: new Date().toISOString() })
                     .eq("id", withdrawal.account_id);
 
+                // Update total_withdrawals and auto-upgrade rank
+                const withdrawalAmount = Number(withdrawal.user_amount) || 0;
+                if (withdrawalAmount > 0 && withdrawal.user_id) {
+                    const { data: userRow } = await supabaseAdmin
+                        .from("users")
+                        .select("total_withdrawals, highest_rank")
+                        .eq("id", withdrawal.user_id)
+                        .single();
+
+                    const currentTotal = Number(userRow?.total_withdrawals || 0);
+                    const newTotal = currentTotal + withdrawalAmount;
+                    const currentHighest = userRow?.highest_rank || "unranked";
+
+                    const rankUpdates: Record<string, unknown> = {
+                        total_withdrawals: newTotal,
+                    };
+
+                    // Auto-upgrade rank based on withdrawal thresholds
+                    const RANK_ORDER = ["unranked", "novato", "warrior", "elite", "legend"];
+                    const currentIdx = RANK_ORDER.indexOf(currentHighest);
+
+                    if (newTotal >= 3000 && currentIdx < RANK_ORDER.indexOf("elite")) {
+                        rankUpdates.highest_rank = "elite";
+                    } else if (newTotal >= 1000 && currentIdx < RANK_ORDER.indexOf("warrior")) {
+                        rankUpdates.highest_rank = "warrior";
+                    }
+
+                    await supabaseAdmin
+                        .from("users")
+                        .update(rankUpdates)
+                        .eq("id", withdrawal.user_id);
+
+                    console.log(`🏅 Updated user ${withdrawal.user_id} total_withdrawals: $${newTotal}`, rankUpdates.highest_rank ? `→ Rank: ${rankUpdates.highest_rank}` : "");
+                }
+
                 console.log(`✅ Admin completed withdrawal ${id}, tx: ${txHash}`);
                 break;
             }

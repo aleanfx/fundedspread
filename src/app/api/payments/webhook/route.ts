@@ -119,13 +119,8 @@ export async function POST(request: Request) {
                 console.error("Error creating mt5_account:", accountError);
             }
 
-            // 4. Update challenge to 'active'
-            await supabaseAdmin
-                .from("challenge_transactions")
-                .update({ status: "active" })
-                .eq("id", transaction.id);
-
-            console.log(`✅ Challenge activated for user ${transaction.user_id}: ${transaction.challenge_tier} ($${accountSize})`);
+            // Transaction stays at 'paid' — admin will review, assign MT5 credentials, and activate manually
+            console.log(`✅ Payment confirmed for user ${transaction.user_id}: ${transaction.challenge_tier} ($${accountSize}) — awaiting admin activation`);
         }
 
         return NextResponse.json({ success: true });

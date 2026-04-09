@@ -88,9 +88,45 @@ cd mt5-1
 Este es el secreto de la alta densidad. Levanta MT5 en una pantalla "falsa" número 99:
 
 ```bash
-xvfb-run -a -n 99 -s "-screen 0 1024x768x24" wine terminal64.exe /portable
+xvfb-run -a -n 99 -s "-screen 0 1024x768x24" wine terminal64.exe /portable &
 ```
 Al ejecutar `/portable`, el MT5 se abrirá y correrá sin interfaz gráfica usando casi nada de RAM. 
 Tu Expert Advisor correrá perfectamente y se comunicará con el Backend de Supabase.
 
 *Nota: Para automatizar el alta de servidores masivos en el futuro usando la API, se crearán comandos Bash especiales, pero por ahora en la prueba manual este es el proceso de despliegue directo.*
+
+---
+
+## Fase 6: Flujo Rápido de Aprobación Manual (Para nuevos clientes)
+
+Cuando un cliente te paga por fuera de la plataforma (cripto, transferencia, cash), este es el proceso completo exacto resumido para darle su cuenta en 5 minutos:
+
+1. **Vincular en Panel Admin:**
+   - Entra a tu Admin Panel de Funded Spread.
+   - Busca al usuario, dale clic a **"📦 Agregar Cuenta"**.
+   - Coloca los datos de la cuenta MT5 que le vas a crear y el tamaño de la cuenta.
+
+2. **Crear y Configurar MetaTrader 5:**
+   - Ve a tu Broker (Alpari/IC Markets) y crea la cuenta Demo con capital inicial, 1:100 de apalancamiento, etc.
+   - Abre tu cliente MetaTrader 5 local en tu PC y loguéate en esa cuenta.
+   - Arrastra el **EA (Bot)** al gráfico para que quede activo.
+   - Asegúrate de que las credenciales de la Pestaña "Inputs" y los permisos de Request Webhook estén habilitados hacia `https://www.fundedspread.com`.
+
+3. **Subir al VPS Activo:**
+   - Comprime tu carpeta de MetaTrader ya activa (ej. `mt5-nombreCliente.zip`).
+   - Abre **PowerShell** en tu Windows (desde tu escritorio).
+   - Súbelo con el comando: 
+     `scp -i llave.pem mt5-nombreCliente.zip ubuntu@IP_DEL_VPS:/home/ubuntu/`
+
+4. **Arrancar en el VPS:**
+   - Ingresa a la consola web de AWS (Terminal del VPS).
+   - Extrae el zip que acaba de subir:
+     `unzip "mt5-nombreCliente.zip" -d mt5-nombreCliente`
+   - Entra en la carpeta final donde está el `.exe`:
+     `cd mt5-nombreCliente` *(Nota: si el zip metió una sobre-carpeta, haz `cd mt5-nombreCliente/mt5-nombreCliente`)*
+   - Corre el comando en segundo plano:
+     `xvfb-run -a -n 100 -s "-screen 0 1024x768x24" wine terminal64.exe /portable &`
+
+5. **Verificación:**
+   - Ve a tu Admin Panel nuevamente, busca al usuario y haz clic en **"Monitorear"** (Impersonate).
+   - Si el dashboard muestra el balance que indicaste (ej: $100,000), el bot envió con éxito la lectura inicial y tu cliente está 100% operativo y listo para tradear.

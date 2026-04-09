@@ -265,7 +265,15 @@ export function EquityChart3D() {
             </defs>
             <motion.path d={areaData} fill="url(#chartGradient)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 1 }} />
             <motion.path d={pathData} fill="none" stroke="#00ff88" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.8, duration: 1.5, ease: "easeOut" }} />
-            <motion.circle cx={width} cy={height - (points[points.length - 1] / 100) * height} r="5" fill="#00ff88" initial={{ scale: 0 }} animate={{ scale: [1, 1.5, 1] }} transition={{ delay: 2.3, duration: 1.5, repeat: Infinity }} />
+            <motion.circle 
+              cx={width} 
+              cy={points.length > 0 ? height - (points[points.length - 1] / 100) * height : height / 2} 
+              r={5} 
+              fill="#00ff88" 
+              initial={{ scale: 0, r: 5 }} 
+              animate={{ scale: [1, 1.5, 1] }} 
+              transition={{ delay: 2.3, duration: 1.5, repeat: Infinity }} 
+            />
           </svg>
 
           <div className="flex items-center gap-6 mt-3 relative z-10">

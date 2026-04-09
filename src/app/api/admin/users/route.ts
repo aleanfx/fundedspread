@@ -31,7 +31,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }
 
-        const { userId, action } = await request.json();
+        const body = await request.json();
+        const { userId, action } = body;
 
         if (!userId || !action) {
             return NextResponse.json({ error: "Faltan parámetros" }, { status: 400 });
@@ -67,6 +68,46 @@ export async function POST(request: Request) {
                 await supabaseAdmin.auth.admin.deleteUser(userId);
 
                 console.log(`🗑️ Admin deleted user ${userId} and all related data`);
+                break;
+            }
+
+            case "update_profile": {
+                const { updates } = body;
+                
+                if (!updates || typeof updates !== "object") {
+                    return NextResponse.json({ error: "Faltan datos de actualización" }, { status: 400 });
+                }
+
+                // Only allow these fields to be updated
+                const allowedFields = [
+                    "username", "avatar_url", "total_withdrawals", 
+                    "top_three_finishes", "top_ten_finishes", 
+                    "highest_rank", "is_rank_locked", "xp", 
+                    "account_balance", "is_admin", "phases_passed", "is_funded"
+                ];
+                
+                const sanitized: Record<string, any> = {};
+                for (const key of allowedFields) {
+                    if (updates[key] !== undefined) {
+                        sanitized[key] = updates[key];
+                    }
+                }
+
+                if (Object.keys(sanitized).length === 0) {
+                    return NextResponse.json({ error: "No hay campos válidos para actualizar" }, { status: 400 });
+                }
+
+                const { error: updateError } = await supabaseAdmin
+                    .from("users")
+                    .update(sanitized)
+                    .eq("id", userId);
+
+                if (updateError) {
+                    console.error("Error updating user profile:", updateError);
+                    return NextResponse.json({ error: "Error al actualizar perfil" }, { status: 500 });
+                }
+
+                console.log(`✏️ Admin updated profile for user ${userId}:`, Object.keys(sanitized));
                 break;
             }
 

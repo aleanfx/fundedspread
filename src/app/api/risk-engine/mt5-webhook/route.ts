@@ -36,25 +36,25 @@ interface MT5Payload {
 // CHALLENGE TYPE CONFIGURATIONS
 // ============================================
 
-// Classic 2-Phase (FundedNext style)
+// Classic 2-Phase
 const CLASSIC_CONFIG = {
-    phase1: { profitTarget: 8, dailyDD: 5, maxDD: 10, minDays: 5, timeLimit: 30 },
-    phase2: { profitTarget: 5, dailyDD: 5, maxDD: 10, minDays: 5, timeLimit: 60 },
-    funded: { dailyDD: 5, maxDD: 10 },
+    phase1: { profitTarget: 8, dailyDD: 4, maxDD: 10, minDays: 5, timeLimit: 30 },
+    phase2: { profitTarget: 5, dailyDD: 4, maxDD: 10, minDays: 5, timeLimit: 60 },
+    funded: { dailyDD: 4, maxDD: 10 },
 };
 
 // Scaling x2 (Checkpoints)
 const SCALING_CONFIG = {
     profitTarget: 20, // +20% para escalar
-    dailyDD: 5,
+    dailyDD: 4,
     maxDD: 10,
 };
 
-// Express 1-Phase (Firm stricter rules, 1 phase only)
+// Express 1-Phase (Stricter rules, 1 phase only)
 const EXPRESS_CONFIG = {
     profitTarget: 10, // +10% target
     dailyDD: 3,       // Stricter daily
-    maxDD: 6,         // Stricter max total
+    maxDD: 5,         // Stricter max total
 };
 
 export async function POST(request: Request) {
@@ -121,8 +121,8 @@ export async function POST(request: Request) {
 
         // ====== REGLAS DE DRAWDOWN (aplican a AMBOS tipos) ======
         if (action === "OK") {
-            // Regla 1: Daily Drawdown (5%)
-            const dailyDDPct = account.daily_drawdown_pct || 5;
+            // Regla 1: Daily Drawdown (4% default for classic)
+            const dailyDDPct = account.daily_drawdown_pct || 4;
             const maxDailyLoss = account.daily_initial_balance * (dailyDDPct / 100);
             const minDailyEquity = account.daily_initial_balance - maxDailyLoss;
 
@@ -221,6 +221,58 @@ export async function POST(request: Request) {
 
         if (updateError) {
             console.error(`⚠️ [MT5 Webhook] Failed to update stats for ${body.login}:`, updateError);
+        }
+
+        // ====== UPDATE USER RANK STATS (phases_passed, is_funded) ======
+        if (shouldLevelUp && account.user_id) {
+            try {
+                const rankUpdates: Record<string, unknown> = {};
+
+                if (newStatus === "phase2_ready") {
+                    // Passed Phase 1 → increment phases_passed
+                    const { data: userRow } = await supabaseAdmin
+                        .from("users")
+                        .select("phases_passed, highest_rank")
+                        .eq("id", account.user_id)
+                        .single();
+
+                    const currentPhases = (userRow?.phases_passed || 0) + 1;
+                    rankUpdates.phases_passed = currentPhases;
+
+                    // Auto-upgrade rank if applicable (Novato requires 1 phase)
+                    const currentHighest = userRow?.highest_rank || "unranked";
+                    if (currentHighest === "unranked" && currentPhases >= 1) {
+                        rankUpdates.highest_rank = "novato";
+                    }
+                } else if (newStatus === "funded") {
+                    // Got funded → set is_funded, increment phases_passed
+                    const { data: userRow } = await supabaseAdmin
+                        .from("users")
+                        .select("phases_passed, highest_rank, total_withdrawals")
+                        .eq("id", account.user_id)
+                        .single();
+
+                    const currentPhases = (userRow?.phases_passed || 0) + 1;
+                    rankUpdates.phases_passed = currentPhases;
+                    rankUpdates.is_funded = true;
+
+                    // Auto-upgrade rank
+                    const currentHighest = userRow?.highest_rank || "unranked";
+                    if (currentHighest === "unranked") {
+                        rankUpdates.highest_rank = "novato";
+                    }
+                }
+
+                if (Object.keys(rankUpdates).length > 0) {
+                    await supabaseAdmin
+                        .from("users")
+                        .update(rankUpdates)
+                        .eq("id", account.user_id);
+                    console.log(`🏅 [MT5 Webhook] Updated rank stats for user ${account.user_id}:`, rankUpdates);
+                }
+            } catch (rankErr) {
+                console.error(`⚠️ [MT5 Webhook] Failed to update rank stats:`, rankErr);
+            }
         }
 
         // ====== RECORD DAILY SNAPSHOT ======

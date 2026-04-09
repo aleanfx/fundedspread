@@ -12,8 +12,7 @@ import {
     Star,
     TrendingUp
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { createClient } from "@/lib/supabase/client";
+import { supabase, getSafeSession, hasImpersonationCookie } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { RankBadge } from "@/components/RankBadge";
@@ -222,14 +221,16 @@ function PodiumCard({
                     className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full ${c.bgIcon} ${c.labelColor} border border-current/20 uppercase`}
                     style={{ fontFamily: "var(--font-orbitron)" }}
                 >
-                    {t("leaderboard.top")}{position}
+                    {calculateDisplayProfit(trader) > 0 ? `${t("leaderboard.top")}${position}` : "#999+"}
                 </div>
             </div>
 
             {/* Avatar */}
             <div className="relative mx-auto mb-3 w-16 h-16">
                 <div className={`w-16 h-16 rounded-full ${c.bgIcon} border-2 ${c.border} flex items-center justify-center overflow-hidden`}>
-                    {podiumAvatars[trader.username] ? (
+                    {trader.avatar_url ? (
+                        <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : podiumAvatars[trader.username] ? (
                         <img src={podiumAvatars[trader.username]} alt={trader.username} className="w-full h-full object-cover" />
                     ) : (
                         <span className={`text-xl font-bold ${c.iconColor}`}>{trader.username.charAt(0)}</span>
@@ -274,7 +275,7 @@ function PodiumCard({
             <div className="flex justify-center gap-4">
                 <div>
                     <p className="text-xs text-text-muted uppercase">{t("leaderboard.withdrew")}</p>
-                    <p className="text-sm font-bold text-neon-green">+${trader.total_profit.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-neon-green">+${calculateDisplayProfit(trader).toLocaleString()}</p>
                 </div>
                 <div>
                     <p className="text-xs text-text-muted uppercase">{t("leaderboard.winRate")}</p>
@@ -357,14 +358,16 @@ function MobilePodiumCard({
                     className={`text-[9px] font-bold tracking-wider px-2 py-[1px] rounded-full ${c.bgIcon} ${c.labelColor} border border-current/20 uppercase leading-none`}
                     style={{ fontFamily: "var(--font-orbitron)" }}
                 >
-                    {t("leaderboard.top")}{position}
+                    {calculateDisplayProfit(trader) > 0 ? `${t("leaderboard.top")}${position}` : "#999+"}
                 </div>
             </div>
 
             {/* Avatar */}
             <div className={`relative mx-auto mb-1 ${position === 1 ? 'w-11 h-11' : 'w-8 h-8'}`}>
                 <div className={`w-full h-full rounded-full ${c.bgIcon} border-2 ${c.border} flex items-center justify-center overflow-hidden`}>
-                    {podiumAvatars[trader.username] ? (
+                    {trader.avatar_url ? (
+                        <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : podiumAvatars[trader.username] ? (
                         <img src={podiumAvatars[trader.username]} alt={trader.username} className="w-full h-full object-cover" />
                     ) : (
                         <span className={`text-base font-bold ${c.iconColor}`}>{trader.username.charAt(0)}</span>
@@ -406,7 +409,7 @@ function MobilePodiumCard({
             {/* Stats */}
             <div className="flex flex-col items-center w-full">
                 <p className="text-[7.5px] text-text-muted uppercase leading-none mb-0.5">{t("leaderboard.withdrew")}</p>
-                <p className="text-[11px] font-bold text-neon-green font-mono leading-none">+${trader.total_profit.toLocaleString()}</p>
+                <p className="text-[11px] font-bold text-neon-green font-mono leading-none">+${calculateDisplayProfit(trader).toLocaleString()}</p>
             </div>
         </motion.div>
     );
@@ -419,7 +422,7 @@ export default function LeaderboardPage() {
     const { t, language } = useLanguage();
     const [traders, setTraders] = useState<Trader[]>([]);
     const [loading, setLoading] = useState(true);
-    const authClient = createClient();
+    const authClient = supabase;
     const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
     const [currentUserStats, setCurrentUserStats] = useState<UserRankStats | null>(null);
     const [avatarError, setAvatarError] = useState(false);
@@ -431,7 +434,16 @@ export default function LeaderboardPage() {
     const [isDownloading, setIsDownloading] = useState(false);
     const shareCardRef = useRef<HTMLDivElement>(null);
 
+    // Impersonation states
+    const [isImpersonating, setIsImpersonating] = useState(false);
+    const [impersonatedUserEmail, setImpersonatedUserEmail] = useState<string | null>(null);
+    const [impersonatedUserId, setImpersonatedUserId] = useState<string | null>(null);
+    const [impersonatedUserData, setImpersonatedUserData] = useState<any>(null);
+
+
     useEffect(() => {
+        // Impersonation check is now handled in loadData for better synchronization
+
         // Calculate the end of the current month
         const updateCountdown = () => {
             const now = new Date();
@@ -461,73 +473,128 @@ export default function LeaderboardPage() {
     }, []);
 
     const loadData = async () => {
-        // Fetch current user
-        const { data: { user } } = await authClient.auth.getUser();
-        setCurrentUser(user);
+        try {
+            setLoading(true);
+            console.log("Leaderboard: Starting data load...");
 
-        if (user) {
-            // Fetch global stats for the current user to ensure rank consistency
-            const { data: userData } = await supabase
+            const currentMonth = getCurrentMonth();
+
+            // Only check impersonation if admin cookie exists (saves a network call for 99.9% of users)
+            const impPromise = hasImpersonationCookie()
+                ? fetch('/api/admin/impersonate/data').catch(() => null)
+                : Promise.resolve(null);
+
+            const [sessionResponse, impResponse, leaderboardResponse] = await Promise.all([
+                getSafeSession(),
+                impPromise,
+                supabase
+                    .from("leaderboard_traders")
+                    .select("*")
+                    .or(`generation_month.eq.${currentMonth},is_fake.eq.false`)
+                    .order("total_profit", { ascending: false })
+            ]);
+
+            const authUser = sessionResponse.data.session?.user ?? null;
+            setCurrentUser(authUser);
+
+            let targetUserId = authUser?.id;
+            let targetUserEmail = authUser?.email;
+
+            // Handle impersonation data
+            if (impResponse && impResponse.ok) {
+                const impData = await impResponse.json();
+                if (impData.userData) {
+                    setIsImpersonating(true);
+                    setImpersonatedUserEmail(impData.userData.email);
+                    setImpersonatedUserId(impData.userData.id);
+                    setImpersonatedUserData({
+                        ...impData.userData,
+                        full_name: impData.userData.full_name || impData.user?.user_metadata?.full_name,
+                        avatar_url: impData.userData.avatar_url || impData.user?.user_metadata?.avatar_url
+                    });
+                    
+                    targetUserId = impData.userData.id;
+                    targetUserEmail = impData.userData.email;
+                    console.log("Leaderboard: Impersonation active for", targetUserEmail);
+                }
+            }
+
+            // Fetch specific user stats if logged in or impersonated
+            const userStatsResponse = targetUserId ? await supabase
                 .from("users")
-                .select("xp, total_withdrawals, top_ten_finishes, top_three_finishes")
-                .eq("id", user.id)
-                .single();
-            
-            if (userData) {
-                setCurrentUserStats({
-                    xp: userData.xp || 0,
+                .select("total_withdrawals, top_ten_finishes, top_three_finishes, highest_rank, is_rank_locked, phases_passed, is_funded")
+                .eq("id", targetUserId)
+                .single() : { data: null };
+
+
+            // Process Personal Stats
+            if (userStatsResponse.data) {
+                const userData = userStatsResponse.data;
+                const baseStats: UserRankStats = {
+                    phasesCompleted: userData.phases_passed || 0,
+                    isFunded: userData.is_funded === true,
                     totalWithdrawals: Number(userData.total_withdrawals) || 0,
                     topTenFinishes: userData.top_ten_finishes || 0,
                     topThreeFinishes: userData.top_three_finishes || 0,
-                    isFunded: true // Assume funded if they have a profile, or check accs
-                });
+                    highestRank: userData.highest_rank as RankId || "unranked",
+                    isRankLocked: userData.is_rank_locked === true
+                };
+
+                setCurrentUserStats(baseStats);
             }
+
+            // Process Leaderboard Data
+            if (leaderboardResponse.error) {
+                console.error("Leaderboard: Error fetching traders", leaderboardResponse.error);
+            } else {
+                const lbData = leaderboardResponse.data || [];
+                const sorted = [...lbData].sort((a: Trader, b: Trader) => {
+                    const profitA = calculateDisplayProfit(a);
+                    const profitB = calculateDisplayProfit(b);
+                    if (profitB !== profitA) return profitB - profitA;
+                    if (b.total_profit !== a.total_profit) return b.total_profit - a.total_profit;
+                    return a.username.localeCompare(b.username);
+                });
+                setTraders(sorted);
+                console.log("Leaderboard: Successfully loaded", sorted.length, "traders");
+            }
+
+        } catch (err) {
+            console.error("Leaderboard: Critical error in loadData", err);
+        } finally {
+            setLoading(false);
+            console.log("Leaderboard: Load sequence finished");
         }
-
-        setLoading(true);
-        const currentMonth = getCurrentMonth();
-
-        // Fetch all traders for the current month (fake) + all real users
-        const { data, error } = await supabase
-            .from("leaderboard_traders")
-            .select("*")
-            .or(`generation_month.eq.${currentMonth},is_fake.eq.false`)
-            .order("total_profit", { ascending: false });
-
-        if (error) {
-            console.error("Error fetching traders:", error);
-        } else {
-            // Sort client-side by DYNAMIC display profit (bots show daily-calculated profit)
-            const sorted = (data || []).sort((a: Trader, b: Trader) => {
-                const profitA = calculateDisplayProfit(a);
-                const profitB = calculateDisplayProfit(b);
-                return profitB - profitA;
-            });
-            setTraders(sorted);
-        }
-        setLoading(false);
     };
+
 
     useEffect(() => {
         loadData();
     }, []);
 
     // Find if the current user is in the leaderboard
-    const currentUserEntry = currentUser ? traders.find(t => t.user_id === currentUser.id) : null;
+    // When impersonating, the "current user" is the target user
+    const effectiveUserId = isImpersonating ? impersonatedUserId : currentUser?.id;
+    const currentUserEntry = effectiveUserId ? traders.find(tr => tr.user_id === effectiveUserId) : null;
     const currentUserRank = currentUserEntry ? traders.indexOf(currentUserEntry) + 1 : -1;
     const isInTopTen = currentUserRank >= 1 && currentUserRank <= 10;
 
     // Top 10 for display
     const displayTraders = traders.slice(0, 10);
     const top3 = displayTraders.slice(0, 3);
+    const isInDisplayList = currentUserRank >= 1 && currentUserRank <= 10;
 
     // Current user display info
-    const displayName = currentUserEntry?.username || currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Trader";
-    const initials = displayName.charAt(0).toUpperCase();
+    // When impersonating, use the target user's metadata
+    const effectiveMetadata = isImpersonating ? impersonatedUserData : currentUser?.user_metadata;
+    const effectiveEmail = isImpersonating ? impersonatedUserEmail : currentUser?.email;
 
-    // Dynamic flag: from DB entry if exists, else from user profile
-    const userCountryName = currentUser?.user_metadata?.country || "";
-    const userCountryCode = currentUserEntry?.country_code || countryNameToISO[userCountryName] || "";
+    let displayName = currentUserEntry?.username || effectiveMetadata?.full_name || effectiveEmail?.split("@")[0] || "Trader";
+    let userCountryCode = currentUserEntry?.country_code || (effectiveMetadata?.country ? countryNameToISO[effectiveMetadata.country] : "") || "";
+
+
+
+    const initials = displayName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
     // Helper: render a normal trader row
     const renderTraderRow = (trader: Trader, rank: number, animDelay: number) => (
@@ -547,7 +614,7 @@ export default function LeaderboardPage() {
                         }`}
                     style={{ fontFamily: "var(--font-orbitron)" }}
                 >
-                    #{rank}
+                    {calculateDisplayProfit(trader) > 0 ? `#${rank}` : "#999+"}
                 </span>
             </td>
             <td className="py-3.5">
@@ -560,7 +627,7 @@ export default function LeaderboardPage() {
                                     'bg-neon-green/10 border border-neon-green/20'
                             }`}>
                             {trader.avatar_url ? (
-                                <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" />
+                                <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
                                 <span className={`text-xs font-bold ${rank === 1 ? 'text-yellow-400' :
                                     rank === 2 ? 'text-slate-300' :
@@ -624,15 +691,15 @@ export default function LeaderboardPage() {
                         className="font-mono text-xs font-bold text-neon-green"
                         style={{ fontFamily: "var(--font-orbitron)" }}
                     >
-                        #{rank}
+                        {(currentUserEntry && calculateDisplayProfit(currentUserEntry) > 0) ? `#${rank}` : "#999+"}
                     </span>
                 </td>
                 <td className="py-3.5">
                     <div className="flex items-center gap-3">
                         <div className="relative flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10">
                             <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden bg-neon-green/20 border border-neon-green/40 shadow-[0_0_10px_rgba(57,255,20,0.2)]">
-                                {currentUser?.user_metadata?.avatar_url && !avatarError ? (
-                                    <img src={currentUser.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
+                                {effectiveMetadata?.avatar_url && !avatarError ? (
+                                    <img src={effectiveMetadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                                 ) : (
                                     <span className="text-xs font-bold text-neon-green">{initials}</span>
                                 )}
@@ -765,8 +832,8 @@ export default function LeaderboardPage() {
                                     </table>
                                 </div>
 
-                                {/* Floating bar ONLY for users outside top 10 */}
-                                {(!isInTopTen && currentUser) && (
+                                {/* Floating bar ONLY for users outside display list */}
+                                {(!isInDisplayList && currentUser) && (
                                     <motion.div
                                         className="mt-4 rounded-[40px] border border-neon-green/40 shadow-[0_0_20px_rgba(57,255,20,0.15)] bg-gradient-to-r from-neon-green/[0.1] via-neon-green/[0.03] to-bg-secondary p-3 sm:p-4 px-4 sm:px-6 relative overflow-visible"
                                         initial={{ opacity: 0, y: 10 }}
@@ -779,18 +846,19 @@ export default function LeaderboardPage() {
                                                     className={`text-lg sm:text-2xl font-black text-neon-green min-w-[30px] sm:min-w-[50px]`}
                                                     style={{ fontFamily: "var(--font-orbitron)" }}
                                                 >
-                                                    {currentUserRank > 0 ? `#${currentUserRank}` : "-"}
+                                                    {(currentUserRank > 0 && currentUserEntry && calculateDisplayProfit(currentUserEntry) > 0) ? `#${currentUserRank}` : ((currentUserRank > 0 && (!currentUserEntry || calculateDisplayProfit(currentUserEntry) === 0)) ? "#999+" : "-")}
                                                 </span>
 
                                                 <div className="relative flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12">
                                                     <div
                                                         className="w-full h-full rounded-full bg-neon-green/20 border-2 border-neon-green/50 flex items-center justify-center overflow-hidden"
                                                     >
-                                                        {currentUser?.user_metadata?.avatar_url && !avatarError ? (
+                                                        {effectiveMetadata?.avatar_url && !avatarError ? (
                                                             <img
-                                                                src={currentUser.user_metadata.avatar_url}
+                                                                src={effectiveMetadata.avatar_url}
                                                                 alt="Avatar"
                                                                 className="w-full h-full object-cover"
+                                                                referrerPolicy="no-referrer"
                                                                 onError={() => setAvatarError(true)}
                                                             />
                                                         ) : (
@@ -804,7 +872,7 @@ export default function LeaderboardPage() {
                                                     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
                                                         <div className="flex items-center gap-1.5">
                                                             {userCountryCode && (
-                                                                <img src={`https://flagcdn.com/w20/${userCountryCode}.png`} alt={userCountryName} className="w-4 h-3 rounded-sm shrink-0" />
+                                                                <img src={`https://flagcdn.com/w20/${userCountryCode}.png`} alt={userCountryCode} className="w-4 h-3 rounded-sm shrink-0" />
                                                             )}
                                                             <p
                                                                 className="font-bold text-neon-green text-[12px] sm:text-[15px] uppercase leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-none"
@@ -818,8 +886,10 @@ export default function LeaderboardPage() {
                                                         </span>
                                                     </div>
                                                     <div className="mt-1">
-                                                        {currentUserEntry || currentUserStats ? (
-                                                            <RankBadge rankId={getLeaderboardRankId(currentUserEntry || { id: '', username: displayName, total_profit: 0, win_rate: 0, rank_title: 'Novato' } as Trader, currentUserRank, currentUserStats)} size="sm" />
+                                                        {currentUserEntry ? (
+                                                            <RankBadge rankId={getLeaderboardRankId(currentUserEntry, currentUserRank, currentUserStats)} size="sm" />
+                                                        ) : currentUserStats ? (
+                                                            <RankBadge rankId={calculateRank(currentUserStats).id} size="sm" />
                                                         ) : (
                                                             <span className="text-[9px] sm:text-[11px] text-text-muted">{t("leaderboard.table.noWithdrawalsFallback")}</span>
                                                         )}
@@ -934,7 +1004,7 @@ export default function LeaderboardPage() {
                                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                                     <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden bg-black/50 border ${borderColors[idx]}`}>
                                                         {trader.avatar_url ? (
-                                                            <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" />
+                                                            <img src={trader.avatar_url} alt={trader.username} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                                         ) : (
                                                             <span className={`text-[10px] font-bold ${nameColors[idx]}`}>
                                                                 {trader.username.charAt(0)}
@@ -1073,11 +1143,11 @@ export default function LeaderboardPage() {
                                                         <div className="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20">
                                                             <div className="w-full h-full rounded-full border-2 border-neon-green/50 p-0.5" style={{ background: '#0B0C10' }}>
                                                                 <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center" style={{ background: 'rgba(57,255,20,0.1)' }}>
-                                                                    {(currentUser?.user_metadata?.avatar_url && !avatarError) ? (
-                                                                        <img src={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/proxy-image?url=${encodeURIComponent(currentUser.user_metadata.avatar_url)}`} alt={displayName} crossOrigin="anonymous" className="w-full h-full object-cover" onError={(e) => {
+                                                                    {(effectiveMetadata?.avatar_url && !avatarError) ? (
+                                                                        <img src={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/proxy-image?url=${encodeURIComponent(effectiveMetadata.avatar_url)}`} alt={displayName} crossOrigin="anonymous" className="w-full h-full object-cover" onError={(e) => {
                                                                             // Si el proxy falla, revertir a la URL original para que al menos se vea en la web
                                                                             if (e.currentTarget.src.includes('/api/proxy-image')) {
-                                                                                e.currentTarget.src = currentUser.user_metadata.avatar_url;
+                                                                                e.currentTarget.src = effectiveMetadata.avatar_url;
                                                                             }
                                                                         }} />
                                                                     ) : (
@@ -1101,11 +1171,11 @@ export default function LeaderboardPage() {
                                                             <div className="flex items-center gap-4 text-text-muted">
                                                                 <div>
                                                                     <p className="text-[8px] uppercase tracking-tight mb-0.5 text-text-muted">Global Rank</p>
-                                                                    {currentUserRank > 0 ? (
+                                                                    {(currentUserRank > 0 && currentUserEntry && calculateDisplayProfit(currentUserEntry) > 0) ? (
                                                                         <p className="text-lg sm:text-xl font-black text-text-primary font-mono leading-none">#{currentUserRank}</p>
                                                                     ) : (
                                                                         <div className="mt-[-2px]">
-                                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-text-muted uppercase tracking-[0.2em] bg-white/5 border border-white/10">Unranked</span>
+                                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold text-text-muted uppercase tracking-[0.2em] bg-white/5 border border-white/10">#999+</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -1114,7 +1184,9 @@ export default function LeaderboardPage() {
                                                                     <p className="text-[8px] uppercase tracking-tight mb-0.5">Trader Level</p>
                                                                     <div className="mt-0.5">
                                                                         {currentUserEntry ? (
-                                                                            <RankBadge rankId={getLeaderboardRankId(currentUserEntry, currentUserRank)} size="md" />
+                                                                            <RankBadge rankId={getLeaderboardRankId(currentUserEntry, currentUserRank, currentUserStats)} size="md" />
+                                                                        ) : currentUserStats ? (
+                                                                            <RankBadge rankId={calculateRank(currentUserStats).id} size="md" />
                                                                         ) : (
                                                                             <RankBadge rankId="novato" size="md" />
                                                                         )}

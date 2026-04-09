@@ -14,11 +14,11 @@ import {
     Home,
 } from "lucide-react";
 import { FundedSpreadLogo } from "@/components/FundedSpreadLogo";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getSafeSession, hasImpersonationCookie } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { RankBadge } from "@/components/RankBadge";
-import { calculateRank, calculateXP, UserRankStats } from "@/lib/utils/rankSystem";
+import { calculateRank, UserRankStats } from "@/lib/utils/rankSystem";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "";
 
@@ -30,6 +30,7 @@ export default function Sidebar() {
     const [user, setUser] = useState<User | null>(null);
     const [userStats, setUserStats] = useState<UserRankStats | null>(null);
     const [signingOut, setSigningOut] = useState(false);
+    const isLoggingOut = useRef(false);
     const [avatarError, setAvatarError] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -72,58 +73,156 @@ export default function Sidebar() {
     }, [pathname]);
 
     useEffect(() => {
-        async function fetchUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
+        const fetchUser = async (force = false) => {
+            if (!force && user && userStats) return; // Skip if already loaded
+            try {
+                // Priority 1: Check for impersonation — only if admin cookie exists
+                if (hasImpersonationCookie()) {
+                    try {
+                        const impRes = await fetch("/api/admin/impersonate/data");
+                        if (impRes.ok) {
+                            const data = await impRes.json();
+                            if (data.userData && data.user) {
+                                console.log("Sidebar: Found impersonation session");
+                                const profile = data.userData;
+                                const authUser = data.user;
+                                const accs = data.accountsData;
 
-            if (user) {
-                // Fetch rank stats
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('xp, total_withdrawals, top_three_finishes, top_ten_finishes, is_admin, is_verified')
-                    .eq('id', user.id)
-                    .single();
+                                setUser({
+                                    id: profile.id,
+                                    email: profile.email,
+                                    user_metadata: {
+                                        username: profile.username || authUser?.user_metadata?.username,
+                                        full_name: profile.username || authUser?.user_metadata?.full_name || profile.full_name,
+                                        avatar_url: profile.avatar_url || authUser?.user_metadata?.avatar_url
+                                    }
+                                } as any);
 
-                const { data: accountsData } = await supabase
-                    .from('mt5_accounts')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false });
-
-                if (userData) {
-                    setUserStats({
-                        xp: userData.xp || (accountsData?.[0] ? calculateXP(accountsData[0]) : 0),
-                        isFunded: accountsData?.[0]?.account_status === 'funded',
-                        totalWithdrawals: userData.total_withdrawals || 0,
-                        topThreeFinishes: userData.top_three_finishes || 0,
-                        topTenFinishes: userData.top_ten_finishes || 0,
-                        isAdmin: userData.is_admin || false,
-                        isVerified: userData.is_verified || false
-                    });
+                                setUserStats({
+                                    isFunded: (profile.is_funded === true) || accs?.[0]?.account_status === 'funded',
+                                    phasesCompleted: profile.phases_passed || 0,
+                                    totalWithdrawals: profile.total_withdrawals || 0,
+                                    topThreeFinishes: profile.top_three_finishes || 0,
+                                    topTenFinishes: profile.top_ten_finishes || 0,
+                                    isAdmin: false,
+                                    isVerified: profile.is_verified,
+                                    highestRank: profile.highest_rank,
+                                    isRankLocked: profile.is_rank_locked
+                                });
+                                return true;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Sidebar: impersonation check failed", e);
+                    }
                 }
+
+                // Priority 2: Normal Auth User
+                const { data: { session } } = await getSafeSession();
+                const authUser = session?.user;
+
+                if (authUser) {
+                    setUser(authUser);
+
+                    // Parallelize record fetching for speed
+                    const [userDbRes, accountsDbRes] = await Promise.all([
+                        supabase.from('users').select('full_name, username, avatar_url, email, total_withdrawals, top_three_finishes, top_ten_finishes, is_admin, is_verified, highest_rank, is_rank_locked, phases_passed, is_funded').eq('id', authUser.id).single(),
+                        supabase.from('mt5_accounts').select('account_status').eq('user_id', authUser.id).order('created_at', { ascending: false }).limit(1)
+                    ]);
+
+                    const ud = userDbRes.data;
+                    const accs = accountsDbRes.data;
+
+                    if (ud) {
+                        // Enrich user object with DB data so displayName works even if user_metadata is sparse
+                        const enrichedUser = {
+                            ...authUser,
+                            email: authUser.email || ud.email,
+                            user_metadata: {
+                                ...authUser.user_metadata,
+                                full_name: authUser.user_metadata?.full_name || ud.full_name || ud.username,
+                                username: authUser.user_metadata?.username || ud.username || ud.full_name,
+                                avatar_url: authUser.user_metadata?.avatar_url || ud.avatar_url,
+                            }
+                        };
+                        setUser(enrichedUser as any);
+
+                        setUserStats({
+                            isFunded: (ud.is_funded === true) || accs?.some((a: any) => a.account_status === 'funded') || false,
+                            phasesCompleted: ud.phases_passed || 0,
+                            totalWithdrawals: ud.total_withdrawals || 0,
+                            topThreeFinishes: ud.top_three_finishes || 0,
+                            topTenFinishes: ud.top_ten_finishes || 0,
+                            isAdmin: ud.is_admin || false,
+                            isVerified: ud.is_verified || false,
+                            highestRank: ud.highest_rank as any || 'unranked',
+                            isRankLocked: ud.is_rank_locked === true
+                        });
+                    }
+                } else {
+                    setUser(null);
+                    setUserStats(null);
+                }
+            } catch (err) {
+                console.error("Sidebar: Critical error in fetchUser", err);
             }
-        }
+            return false;
+        };
+
+
         fetchUser();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+        // Listen for auth changes (login, logout, token refresh)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+            if (isLoggingOut.current) return;
+            await fetchUser(true); // Force refresh on auth change
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [supabase]); // Only run on mount — auth changes handled by onAuthStateChange
 
     const handleSignOut = async () => {
+        if (isLoggingOut.current) return;
+
+        isLoggingOut.current = true;
         setSigningOut(true);
-        await supabase.auth.signOut();
-        router.push("/");
-        router.refresh();
+
+        // Immediate cookie cleanup on client side for robustness
+        try {
+            document.cookie = "impersonate_user_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+            document.cookie = "impersonate_target_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        } catch (e) { /* ignore */ }
+
+        // Start all cleanup tasks IN PARALLEL
+        const cleanupTasks = [
+            fetch("/api/admin/impersonate", {
+                method: "POST",
+                body: JSON.stringify({ action: "stop" })
+            }).catch(() => { }),
+            supabase.auth.signOut().catch(() => { })
+        ];
+
+        // Safety net: Force redirect in 800ms even if network tasks are slow
+        const safetyTimeout = setTimeout(() => {
+            window.location.href = "/";
+        }, 800);
+
+        try {
+            // Wait for both, but the timeout will win if they take too long
+            await Promise.all(cleanupTasks);
+            clearTimeout(safetyTimeout);
+            window.location.href = "/";
+        } catch (err) {
+            console.error("Sign out process error:", err);
+            clearTimeout(safetyTimeout);
+            window.location.href = "/";
+        }
     };
 
-    const displayName = user?.user_metadata?.full_name
-        || user?.email?.split("@")[0]
-        || "Trader";
+    const displayName = user?.user_metadata?.full_name || user?.user_metadata?.username || user?.email?.split("@")[0] || "Trader";
     const displayEmail = user?.email || "";
-    const initials = displayName.charAt(0).toUpperCase();
+    const initials = displayName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
     return (
         <>
@@ -138,12 +237,12 @@ export default function Sidebar() {
             {/* Mobile Backdrop */}
             {isMobileMenuOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                    className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
             )}
 
-            <aside className={`fixed md:sticky top-0 left-0 h-[100dvh] w-[240px] bg-bg-sidebar border-r border-border-subtle flex flex-col z-50 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            <aside className={`fixed md:sticky top-0 left-0 h-[100dvh] w-[240px] bg-bg-sidebar border-r border-border-subtle flex flex-col z-[100] transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
                 }`}>
                 {/* Mobile Close Button */}
                 <button
@@ -262,6 +361,9 @@ export default function Sidebar() {
                                         src={user.user_metadata.avatar_url}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
+                                        referrerPolicy="no-referrer"
+                                        crossOrigin="anonymous"
+                                        loading="eager"
                                         onError={() => setAvatarError(true)}
                                     />
                                 ) : (
@@ -287,11 +389,15 @@ export default function Sidebar() {
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                                <p className="text-sm font-semibold text-text-primary truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
-                                    {displayName}
-                                </p>
-                            </div>
+                            <h3
+                                className="text-sm font-bold text-text-primary truncate uppercase flex items-center gap-2"
+                                style={{ fontFamily: "var(--font-orbitron)" }}
+                            >
+                                {displayName}
+                                {userStats?.isRankLocked && userStats?.highestRank && userStats.highestRank !== 'unranked' && (
+                                    <RankBadge rankId={userStats.highestRank} size="xs" showName={false} className="mb-0.5" />
+                                )}
+                            </h3>
                             <p className="text-[11px] text-text-muted truncate">
                                 {displayEmail}
                             </p>

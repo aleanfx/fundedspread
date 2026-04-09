@@ -363,7 +363,7 @@ export default function CheckoutPage() {
         };
         getUser();
 
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: { user: User } | null) => {
             setUser(session?.user ?? null);
         });
 

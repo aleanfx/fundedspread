@@ -1,0 +1,550 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "error": "An error occurred",
+    "success": "Success",
+    "language": {
+      "es": "Spanish",
+      "en": "English"
+    }
+  },
+  "navbar": {
+    "home": "Home",
+    "panel": "Dashboard",
+    "challenges": "Challenges",
+    "leaderboard": "Leaderboard",
+    "pricing": "Pricing",
+    "protocol": "The Protocol",
+    "levels": "Levels",
+    "dashboard": "GO TO DASHBOARD",
+    "login": "Login",
+    "register": "GET FUNDED NOW",
+    "enter": "Log In"
+  },
+  "sidebar": {
+    "system": "System"
+  },
+  "footer": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "support": "Support",
+    "contact": "Contact"
+  },
+  "interactive": {
+    "portfolioValue": "Portfolio Value",
+    "total": "Total",
+    "winRate": "Win Rate",
+    "profitFactor": "Profit Factor",
+    "level": "Level",
+    "clickToFlip": "Click to flip",
+    "clickToReturn": "Click to return",
+    "whyTitle": "WHY FUNDED SPREAD?",
+    "whyDesc": "Real capital. Real profits. No personal risk.",
+    "list": [
+      {
+        "text": "Funded accounts from",
+        "highlight": "$5K up to $200K"
+      },
+      {
+        "text": "Up to",
+        "highlight": "90% profit split"
+      },
+      {
+        "text": "Payouts with",
+        "highlight": "crypto (BTC, USDT)"
+      },
+      {
+        "text": "No",
+        "highlight": "time limits"
+      }
+    ],
+    "testimonial": "\"In 3 months I went from $35 to a $50K funded account.\"",
+    "testimonialAuthor": "— @CryptoPhantom, Trader Legend",
+    "ticker": [
+      {
+        "icon": "💰",
+        "text": "@TradeMaster42 withdrew $4,200"
+      },
+      {
+        "icon": "🏆",
+        "text": "@AlphaFX passed Level 2"
+      },
+      {
+        "icon": "🚀",
+        "text": "@NeonKing unlocked a $50K account"
+      },
+      {
+        "icon": "💎",
+        "text": "@CryptoWolf made $8,750 this month"
+      },
+      {
+        "icon": "⚡",
+        "text": "@DayTrader_Pro achieved 90% profit split"
+      },
+      {
+        "icon": "🔥",
+        "text": "@FXMaster completed the Legend challenge"
+      },
+      {
+        "icon": "💰",
+        "text": "@SwingTrader withdrew $12,400"
+      },
+      {
+        "icon": "🏆",
+        "text": "@NeonElite passed all Levels"
+      }
+    ]
+  },
+  "profileData": {
+    "id": "ID",
+    "memberSince": "Member since",
+    "noWithdrawals": "No withdrawals yet",
+    "noWithdrawalsDesc": "Withdrawals will appear here once your account is funded.",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "country": "Country",
+    "selectCountry": "Select your country",
+    "other": "Other",
+    "editProfile": "Edit Profile",
+    "changePhoto": "Change Photo",
+    "kycTitle": "Identity Verification",
+    "verified": "Verified",
+    "locked": "Locked",
+    "required": "Required",
+    "startKYC": "Start KYC Verification",
+    "kycVerifiedDesc": "Your identity has been successfully verified. You are enabled to process withdrawals on your funded accounts.",
+    "kycLockedDesc": "KYC verification will be enabled automatically when you have a real (Funded) account in profit, ready to process your first withdrawal.",
+    "kycRequiredDesc": "Congratulations! You are eligible to withdraw. Please complete your identity verification to process your payout.",
+    "withdrawalHistory": "Withdrawal History"
+  },
+  "analytics": {
+    "sessionId": "Session ID:",
+    "optimalRange": "Optimal Range",
+    "totalTrades": "Total Trades",
+    "topPerformance": "Top 8% Performance",
+    "won": "Won",
+    "lost": "Lost",
+    "date": "Date",
+    "pairs": "Pairs",
+    "notes": "Notes",
+    "avgRrr": "Avg RRR"
+  },
+  "hero": {
+    "badge": "Next-Gen Trading",
+    "title1": "YOUR EDGE.",
+    "title2": "OUR CAPITAL.",
+    "description": "Trade with up to <span class=\"text-text-primary font-semibold\">$200,000</span> of our capital. Keep up to <span class=\"text-neon-green font-semibold\">90%</span> of the profits. Pay with crypto. Zero personal risk.",
+    "startChallenge": "GET FUNDED NOW",
+    "howItWorks": "HOW IT WORKS",
+    "traits": {
+      "secure": "Secure Payouts",
+      "instant": "Instant Activation",
+      "traders": "12,500+ Traders"
+    }
+  },
+  "stats": {
+    "paid": "Paid to Traders",
+    "active": "Active Traders",
+    "avg": "Avg. Payout",
+    "split": "Max Profit Split"
+  },
+  "pricing": {
+    "badge": "Choose Your Arena",
+    "title1": "CHOOSE YOUR",
+    "title2": "CHALLENGE",
+    "description": "Select your challenge type and account size. Pay with crypto and start your journey.",
+    "recommended": "RECOMMENDED",
+    "types": {
+      "express": "Express 1 Phase",
+      "expressDesc": "10% Target → Funded Account",
+      "classic": "Classic 2 Phases",
+      "classicDesc": "Phase 1 (+8%) → Phase 2 (+5%) → Funded Account"
+    },
+    "features": {
+      "account": "Account of",
+      "phase1": "Phase 1",
+      "phase2": "Phase 2",
+      "dailyDD": "Daily DD",
+      "maxDD": "Max DD",
+      "profitSplit": "Base Profit Split",
+      "minDays": "min days",
+      "support": "Priority Support",
+      "vipSupport": "VIP Support",
+      "vipExtraSupport": "VIP Extra Support",
+      "target": "Target",
+      "noTimeLimit": "No Time Limit"
+    },
+    "card": {
+      "refund": "Refundable",
+      "getFunded": "Choose",
+      "or": "or",
+      "popular": "POPULAR",
+      "perChallenge": "/ challenge"
+    }
+  },
+  "protocol": {
+    "title1": "THE",
+    "title2": "PROTOCOL",
+    "description": "Three simple steps to unlock your maximum trading potential and get funded.",
+    "steps": {
+      "1": {
+        "title": "FUND",
+        "desc": "Choose your challenge size and get your evaluation account instantly."
+      },
+      "2": {
+        "title": "TRADE",
+        "desc": "Reach the profit targets while respecting the drawdown rules."
+      },
+      "3": {
+        "title": "WITHDRAW",
+        "desc": "Get funded and keep up to 90% of your profits. Withdraw in crypto whenever you want."
+      }
+    }
+  },
+  "levels": {
+    "title1": "LEVEL SYSTEM",
+    "title2": "UPGRADES",
+    "description": "Beat your targets. Scale your account. Unlock massive payouts.",
+    "level": "Level",
+    "target_label": "Objective (COMPLETE AT LEAST ONE)",
+    "data": {
+      "novato": {
+        "target": "Pass an evaluation phase",
+        "reward": "Unlock Rank Badge"
+      },
+      "warrior": {
+        "target": "Withdraw +$1,000 accumulated",
+        "reward": "Premium Badge and Status"
+      },
+      "elite": {
+        "target": "Withdraw +$3,000 or reach Top 10",
+        "reward": "High-Rank Distinction"
+      },
+      "legend": {
+        "target": "Top 3 Worldwide",
+        "reward": "Legendary Status and Perks"
+      }
+    }
+  },
+  "cta": {
+    "title1": "THE MARKET",
+    "title2": "DOES NOT WAIT.",
+    "description": "Neither should you. Start trading with up to $200,000 today.",
+    "button": "GET FUNDED NOW",
+    "footer": "No personal capital · Zero risk · Crypto payouts"
+  },
+  "profileDropdown": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "logout": "Log Out",
+    "signingOut": "Signing Out...",
+    "online": "Online"
+  },
+  "auth": {
+    "loginTab": "Login",
+    "registerTab": "Register",
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "password": "Password",
+    "loginBtn": "LOG IN",
+    "registerBtn": "CREATE ACCOUNT",
+    "or": "or",
+    "google": "Continue with Google",
+    "apple": "Continue with Apple",
+    "footerPlain": "Secure · Encrypted · ",
+    "footerNeon": "Online"
+  },
+  "dashboard": {
+    "welcome": "Welcome,",
+    "activeChallenge": "Active Challenge",
+    "profit": "Profit",
+    "loss": "Loss",
+    "pnlEmpty": "No P&L data yet",
+    "equityCurve": "EQUITY CURVE",
+    "performanceMetrics": "Real-time performance metrics",
+    "periods": {
+      "1w": "1W",
+      "1m": "1M",
+      "3m": "3M"
+    },
+    "recentTrades": "RECENT TRADES",
+    "headers": {
+      "symbol": "Symbol",
+      "type": "Type",
+      "entry": "Entry",
+      "exit": "Exit",
+      "pnl": "P&L"
+    },
+    "errors": {
+      "invalidBalance": "Error: The account you are trying to link does not have the correct balance or is not a Demo account. Please create a new Demo account with the exact balance in USD.",
+      "accountInUse": "Error: This MT5 account is already linked to another Challenge. Please verify your registration details.",
+      "linkingError": "Linking error:"
+    },
+    "calculating": "Calculating...",
+    "readyForPayout": "READY FOR PAYOUT!",
+    "withdrawSuccess": "Your withdrawal request has been registered. The operations team will process your payment.",
+    "loading": "Loading Dashboard...",
+    "noActiveChallenge": {
+      "title": "You don't have an active challenge",
+      "desc": "Purchase a challenge to start your career as a funded trader and access institutional capital.",
+      "button": "View Funding Plans"
+    },
+    "pending": {
+      "title": "PAYMENT CONFIRMED!",
+      "desc1": "Your",
+      "desc2": "challenge is being prepared.",
+      "whatsNext": "What's next?",
+      "step1": "Our automated system is setting up your funding account on MetaTrader 5 institutional servers.",
+      "step2": "Your account will be DEMO with the exact balance.",
+      "step3": "Integrated risk engine for live monitoring.",
+      "step4": "You will receive an email with your secure credentials in 5 - 15 mins.",
+      "creatingServer": "Creating MT5 Server..."
+    },
+    "selectedAccount": "Selected Account",
+    "alertsLabel": "Alerts",
+    "liveMarket": "Live Market",
+    "alerts": {
+      "suspended": "⚠ ACCOUNT SUSPENDED",
+      "attention": "⚠ ATTENTION REQUIRED",
+      "ddExceeded": "Your account has been suspended because the 5% Daily Drawdown limit was exceeded. Contact support to review your account.",
+      "ddExceededShort": "Daily Drawdown exceeded 5%",
+      "suspendedReason": "Your trading account has been suspended:"
+    },
+    "welcomeBack": "Welcome back,",
+    "levelUp": {
+      "congrats": "Congratulations! You have reached the profit target of",
+      "express": "Current phase: Express Evaluation (10%)",
+      "phase1": "Current phase: Evaluation 1 (8%)",
+      "phase2": "Current phase: Evaluation 2 (5%)",
+      "checkpoint1": "Current level: Checkpoint",
+      "checkpoint2": "(+20% to scale)"
+    },
+    "badges": {
+      "express": "EXPRESS CHALLENGE — 1 PHASE",
+      "classic": "CLASSIC CHALLENGE — PHASE",
+      "split": "SPLIT",
+      "scaling": "+ X2 SCALING"
+    },
+    "buttons": {
+      "withdraw": "Withdraw Profit",
+      "scale": "Invest and Scale x2",
+      "levelUp": "LEVEL UP"
+    },
+    "progress": {
+      "toNextCheckpoint": "to next checkpoint"
+    },
+    "stats": {
+      "totalBalance": "Total Balance",
+      "currentEquity": "Current Equity",
+      "todayPnl": "Today P&L",
+      "targetSinglePhase": "Single Phase Target:",
+      "targetPhase": "Phase Target",
+      "targetCheckpoint": "Checkpoint Target:",
+      "dailyLimit": "Daily Limit:",
+      "checkpointProgress": "Checkpoint Progress"
+    },
+    "gauge": {
+      "dailyDrawdown": "Daily Drawdown",
+      "riskActive": "Active Risk Management"
+    },
+    "payout": {
+      "nextPayout": "Next Payout"
+    },
+    "withdrawBtn": "WITHDRAW PROFITS",
+    "accountCredentials": {
+      "title": "CREDENTIALS",
+      "login": "Login ID",
+      "password": "Master Password",
+      "server": "Server",
+      "plan": "Plan",
+      "accountSize": "Account",
+      "type": "Type",
+      "leverage": "Leverage"
+    }
+  },
+  "withdraw": {
+    "title": "WITHDRAW PROFITS",
+    "subtitle": "Request your withdrawal in USDT",
+    "breakdown": "Profit Breakdown",
+    "totalProfit": "Total Profit",
+    "yourSplit": "Your Split",
+    "companySplit": "Company Split",
+    "youReceive": "You Receive",
+    "networkFeeNote": "Network fee will be deducted from the amount sent.",
+    "selectNetwork": "Select Network",
+    "walletAddress": "USDT Address",
+    "requestBtn": "REQUEST WITHDRAWAL",
+    "confirmTitle": "Confirm Withdrawal",
+    "amount": "Amount",
+    "network": "Network",
+    "address": "Address",
+    "confirmNote": "Your request will be reviewed by our team. You will receive your payment in less than 24 hours.",
+    "goBack": "← Go Back",
+    "confirmBtn": "CONFIRM",
+    "processing": "PROCESSING...",
+    "successTitle": "REQUEST SUBMITTED!",
+    "successDesc": "Your withdrawal has been registered. The operations team will process your USDT payment.",
+    "close": "Close",
+    "errorTitle": "ERROR",
+    "tryAgain": "Try Again",
+    "minDaysTitle": "Minimum Trading Days",
+    "minDaysDesc": "You need at least {required} valid trading days (≥0.3% profit per trade). You have {current} days.",
+    "errors": {
+      "invalidAddress": "Invalid wallet address for the selected network.",
+      "minAmount": "Minimum withdrawal amount is $100.",
+      "maxAmount": "Amount exceeds your available profit.",
+      "minDays": "You don't meet the minimum trading days requirement.",
+      "generic": "Error processing your request. Please try again."
+    },
+    "availableProfit": "Available Profit",
+    "availableProfitNote": "You can withdraw from $100 up to your total profit.",
+    "withdrawAmount": "Withdrawal Amount"
+  },
+  "checkout": {
+    "title": "CHOOSE YOUR",
+    "titleHighlight": "CHALLENGE",
+    "subtitle": "Select your challenge type and account size. Pay with crypto and start your journey.",
+    "types": {
+      "express": {
+        "label": "Express 1 Phase",
+        "desc": "Target 10% → Funded Account"
+      },
+      "classic": {
+        "label": "Classic 2 Phases",
+        "desc": "Phase 1 (+8%) → Phase 2 (+5%) → Funded Account"
+      }
+    },
+    "features": {
+      "accountOf": "Account of",
+      "phase1_8_phase2_5": "Phase 1: +8% | Phase 2: +5%",
+      "target1Phase_10": "1 Phase Target: +10%",
+      "dd4_10": "4% Daily DD / 10% Max DD",
+      "dd3_5": "3% Daily DD / 5% Max DD",
+      "profitSplit80": "80% Base Profit Split",
+      "minDays5": "5 minimum days",
+      "minDays2": "2 minimum days",
+      "supportPriority": "Priority Support",
+      "supportVIP": "VIP Support",
+      "supportVIPExtra": "Extra VIP Support"
+    },
+    "badges": {
+      "recommended": "RECOMMENDED",
+      "mostPopular": "MOST POPULAR"
+    },
+    "perChallenge": "/ challenge",
+    "chooseBtn": "CHOOSE",
+    "continueToPayment": "CONTINUE TO PAYMENT",
+    "selectAChallenge": "SELECT A CHALLENGE",
+    "trust": {
+      "securePayments": "Secure Payments",
+      "cryptoOptions": "BTC and USDT",
+      "instantActivation": "Instant Activation"
+    },
+    "confirm": {
+      "title": "CONFIRM YOUR ORDER",
+      "type": "Type:",
+      "challenge": "Challenge:",
+      "accountSize": "Account Size:",
+      "payment": "Payment:",
+      "boostAccount": "Boost your Account",
+      "addons": {
+        "rawSpread": {
+          "title": "Raw Spread",
+          "desc": "From 0.0 pips"
+        },
+        "zeroCommission": {
+          "title": "Zero Commission",
+          "desc": "$0 per traded lot"
+        },
+        "weeklyPayouts": {
+          "title": "Weekly Payouts",
+          "desc": "Withdraw every 7 days"
+        },
+        "scalingX2": {
+          "title": "Scaling x2",
+          "desc": "Double your capital on scaling"
+        }
+      },
+      "profitSplit": {
+        "title": "Profit Split",
+        "base": "Base",
+        "included": "Included",
+        "premium": "Premium",
+        "max": "Maximum",
+        "elite": "Elite"
+      },
+      "total": "Total to Pay:",
+      "payWithCrypto": "PAY WITH CRYPTO",
+      "goBack": "← Go back"
+    },
+    "processing": {
+      "title": "CREATING YOUR INVOICE...",
+      "desc": "Connecting with payment gateway. You will be redirected shortly."
+    },
+    "success": {
+      "title": "PAYMENT RECEIVED!",
+      "desc": "Your challenge is being activated. You will see it in your Dashboard in a few minutes.",
+      "goToDashboard": "GO TO DASHBOARD"
+    },
+    "error": {
+      "title": "PAYMENT ERROR",
+      "tryAgain": "Try Again"
+    },
+    "messages": {
+      "loginRequired": "You must log in or register to buy a challenge.",
+      "invoiceError": "Error creating invoice",
+      "networkError": "Network error. Please try again."
+    }
+  },
+  "leaderboard": {
+    "ranks": {
+      "Beginner": "Beginner",
+      "Novice": "Novice",
+      "Rookie": "Rookie",
+      "Warrior": "Warrior",
+      "Expert": "Expert",
+      "Master": "Master",
+      "Grandmaster": "Grandmaster",
+      "Legend": "Legend",
+      "Champion": "Champion",
+      "Elite": "Elite",
+      "Pro": "Pro"
+    },
+    "verified": "KYC Verified User",
+    "top": "TOP #",
+    "withdrew": "Withdrew",
+    "winRate": "Success Rate",
+    "winRateEn": "Win Rate",
+    "rr": "R:R",
+    "title": "GLOBAL",
+    "titleHighlight": "LEADERBOARD",
+    "subtitle": "Compete against the elite. Reach Legend status.",
+    "table": {
+      "country": "Country",
+      "you": "You",
+      "noWithdrawalsFallback": "No withdrawals yet — trade to rank up!",
+      "loading": "Loading rankings..."
+    },
+    "prizePool": {
+      "title": "PRIZE POOL (April)",
+      "desc": "Compete for a share of $10,000 in cash prizes deposited directly to your account.",
+      "place": "Place"
+    },
+    "countdown": {
+      "deliveredTitle": "Prizes Delivered!",
+      "deliveredDesc": "A new season is starting soon...",
+      "endsIn": "Ends in:",
+      "days": "Days",
+      "hours": "Hrs",
+      "mins": "Mins"
+    },
+    "share": {
+      "title": "Share Your Rank",
+      "desc": "Show off your trading skills. Invite friends to compete in the next tournament.",
+      "btn": "Share Profile"
+    }
+  }
+}

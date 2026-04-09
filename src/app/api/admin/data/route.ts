@@ -47,7 +47,7 @@ export async function GET() {
         // Fetch user profiles
         const { data: profiles } = await supabaseAdmin
             .from("users")
-            .select("id, email, username, avatar_url, account_balance, total_withdrawals, top_three_finishes, top_ten_finishes, created_at");
+            .select("id, email, username, avatar_url, account_balance, total_withdrawals, top_three_finishes, top_ten_finishes, highest_rank, is_rank_locked, xp, is_admin, created_at, phases_passed, is_funded");
 
         // Fetch challenge transactions
         const { data: transactions } = await supabaseAdmin
@@ -63,11 +63,14 @@ export async function GET() {
             .select("id, user_id, username, total_profit, is_fake, generation_month")
             .or(`generation_month.eq.${currentMonth},is_fake.eq.false`);
 
-        // Sort by dynamic profit (bots show daily-calculated profit)
+        // Sort by dynamic profit (bots show daily-calculated profit), then total_profit, then username
         const sortedTraders = (leaderboardTraders || []).sort((a: any, b: any) => {
             const profitA = a.is_fake ? calculateBotDayProfit(a.id, a.total_profit) : a.total_profit;
             const profitB = b.is_fake ? calculateBotDayProfit(b.id, b.total_profit) : b.total_profit;
-            return profitB - profitA;
+            
+            if (profitB !== profitA) return profitB - profitA;
+            if (b.total_profit !== a.total_profit) return b.total_profit - a.total_profit;
+            return (a.username || "").localeCompare(b.username || "");
         });
 
         return NextResponse.json({

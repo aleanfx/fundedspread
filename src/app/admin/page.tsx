@@ -25,10 +25,13 @@ import {
   Edit3,
   Trophy,
   Mail,
+  Eye,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { emailTemplates } from "@/lib/emails/templates";
+import { RankBadge } from "@/components/RankBadge";
+import { calculateRank, UserRankStats, RankId, RANK_INFO } from "@/lib/utils/rankSystem";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "";
 
@@ -105,7 +108,13 @@ interface UserProfile {
   total_withdrawals: number;
   top_three_finishes: number;
   top_ten_finishes: number;
+  highest_rank: string;
+  is_rank_locked: boolean;
+  xp: number;
+  is_admin: boolean;
   created_at: string;
+  phases_passed: number;
+  is_funded: boolean;
 }
 
 type MainTab = "retiros" | "compras" | "usuarios" | "cuentas" | "emails";
@@ -184,11 +193,104 @@ export default function AdminPage() {
   const [newStatus, setNewStatus] = useState("");
   const [showDeleteUserModal, setShowDeleteUserModal] = useState<string | null>(null);
 
+  // MT5 Activation
+  const [showActivateModal, setShowActivateModal] = useState<string | null>(null);
+  const [mt5Login, setMt5Login] = useState("");
+  const [mt5Password, setMt5Password] = useState("");
+  const [mt5Server, setMt5Server] = useState("FundedSpread-Server");
+
   // Leaderboard management
   const [showEditProfitModal, setShowEditProfitModal] = useState<string | null>(null);
   const [editProfitValue, setEditProfitValue] = useState("");
+  const [editRankValue, setEditRankValue] = useState<RankId>("unranked");
+  const [editRankLocked, setEditRankLocked] = useState(false);
   const [showResetTableModal, setShowResetTableModal] = useState(false);
   const [resettingTable, setResettingTable] = useState(false);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+
+  // Profile editor
+  const [showProfileEditor, setShowProfileEditor] = useState<string | null>(null);
+  const [profileEdits, setProfileEdits] = useState<Record<string, any>>({});
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Manual account creation
+  const [showManualAccountModal, setShowManualAccountModal] = useState<string | null>(null);
+  const [manualAccount, setManualAccount] = useState({
+    challengeTier: "starter",
+    challengeType: "classic_2phase",
+    challengePhase: 1,
+    accountSize: 10000,
+    price: 0,
+    mt5Login: "",
+    mt5Password: "",
+    mt5Server: "FundedSpread-Server",
+  });
+  const [creatingManualAccount, setCreatingManualAccount] = useState(false);
+
+  const TIER_SIZES: Record<string, number> = {
+    micro: 5000, starter: 10000, pro: 25000,
+    elite: 50000, legend: 100000, apex: 200000,
+  };
+
+  const handleCreateManualAccount = async () => {
+    if (!showManualAccountModal || !manualAccount.mt5Login || !manualAccount.mt5Password) return;
+    setCreatingManualAccount(true);
+    try {
+      const targetUser = users.find(u => u.id === showManualAccountModal);
+      const res = await fetch("/api/admin/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: "manual",
+          action: "manual_create_account",
+          userId: showManualAccountModal,
+          userEmail: targetUser?.email || "",
+          challengeTier: manualAccount.challengeTier,
+          challengeType: manualAccount.challengeType,
+          challengePhase: Number(manualAccount.challengePhase),
+          accountSize: manualAccount.accountSize,
+          price: manualAccount.price,
+          mt5Login: manualAccount.mt5Login,
+          mt5Password: manualAccount.mt5Password,
+          mt5Server: manualAccount.mt5Server,
+        }),
+      });
+      if (res.ok) {
+        await fetchData();
+        setShowManualAccountModal(null);
+        setManualAccount({ challengeTier: "starter", challengeType: "classic_2phase", challengePhase: 1, accountSize: 10000, price: 0, mt5Login: "", mt5Password: "", mt5Server: "FundedSpread-Server" });
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.error);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de red al crear cuenta");
+    }
+    setCreatingManualAccount(false);
+  };
+
+
+  const handleImpersonate = async (userId: string) => {
+    try {
+      setImpersonatingId(userId);
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        body: JSON.stringify({ action: "start", userId })
+      });
+      if (res.ok) {
+        router.push("/dashboard");
+      } else {
+        const err = await res.json();
+        alert("Error al iniciar monitoreo: " + err.error);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error de conexión");
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
 
   // Auth check
   useEffect(() => {
@@ -307,6 +409,38 @@ export default function AdminPage() {
     setProcessingId(null);
   };
 
+  const handleActivateWithCredentials = async () => {
+    if (!showActivateModal || !mt5Login || !mt5Password) return;
+    setProcessingId(showActivateModal);
+    try {
+      const res = await fetch("/api/admin/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: showActivateModal,
+          action: "activate_with_credentials",
+          mt5Login,
+          mt5Password,
+          mt5Server,
+        }),
+      });
+      if (res.ok) {
+        setShowActivateModal(null);
+        setMt5Login("");
+        setMt5Password("");
+        setMt5Server("FundedSpread-Server");
+        await fetchData();
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.error);
+      }
+    } catch (err) {
+      console.error("Error activating:", err);
+      alert("Error de conexión");
+    }
+    setProcessingId(null);
+  };
+
   /* ---- User actions ---- */
   const handleDeleteUser = async (userId: string) => {
     setProcessingId(userId);
@@ -317,6 +451,49 @@ export default function AdminPage() {
     });
     if (res.ok) { await fetchData(); setShowDeleteUserModal(null); }
     setProcessingId(null);
+  };
+
+  const openProfileEditor = (user: UserProfile) => {
+    setShowProfileEditor(user.id);
+    setProfileEdits({
+      username: user.username || "",
+      phases_passed: user.phases_passed || 0,
+      is_funded: user.is_funded || false,
+      total_withdrawals: user.total_withdrawals || 0,
+      top_three_finishes: user.top_three_finishes || 0,
+      top_ten_finishes: user.top_ten_finishes || 0,
+      highest_rank: user.highest_rank || "unranked",
+      is_rank_locked: user.is_rank_locked || false,
+      is_admin: user.is_admin || false,
+      account_balance: user.account_balance || 0,
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!showProfileEditor) return;
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: showProfileEditor,
+          action: "update_profile",
+          updates: profileEdits,
+        }),
+      });
+      if (res.ok) {
+        setUsers(prev => prev.map(u => u.id === showProfileEditor ? { ...u, ...profileEdits } : u));
+        setShowProfileEditor(null);
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.error);
+      }
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      alert("Error de conexión");
+    }
+    setSavingProfile(false);
   };
 
   /* ---- Computed values ---- */
@@ -335,7 +512,7 @@ export default function AdminPage() {
     : requests.filter((r) => r.status === withdrawalTab);
 
   const filteredTransactions = transactionTab === "all"
-    ? transactions
+    ? transactions.filter((t) => t.status !== "pending")
     : transactions.filter((t) => t.status === transactionTab);
 
   const statusColors: Record<string, string> = {
@@ -490,7 +667,7 @@ export default function AdminPage() {
       {mainTab === "compras" && (
         <div>
           <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-            {(["all", "pending", "paid", "active"] as TransactionFilter[]).map((tab) => (
+            {(["all", "paid", "active"] as TransactionFilter[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTransactionTab(tab)}
@@ -501,11 +678,6 @@ export default function AdminPage() {
                 }`}
               >
                 {tab === "all" ? "Todos" : statusLabels[tab]}
-                {tab === "pending" && transactions.filter(t => t.status === "pending").length > 0 && (
-                  <span className="ml-1.5 bg-yellow-500 text-black text-[9px] px-1 py-0.5 rounded-full font-black">
-                    {transactions.filter(t => t.status === "pending").length}
-                  </span>
-                )}
               </button>
             ))}
           </div>
@@ -581,6 +753,15 @@ export default function AdminPage() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {tx.status === "paid" && (
+                          <button
+                            onClick={() => { setShowActivateModal(tx.id); setMt5Login(""); setMt5Password(""); }}
+                            className="px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs font-bold hover:bg-neon-green/20 transition-colors flex items-center gap-1.5 animate-pulse"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            Activar Cuenta
+                          </button>
+                        )}
                         <button
                           onClick={() => { setShowStatusModal(tx.id); setNewStatus(tx.status); }}
                           className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-secondary text-xs font-bold hover:bg-white/10 transition-colors flex items-center gap-1.5"
@@ -803,6 +984,18 @@ export default function AdminPage() {
                                 <span className="text-text-muted/40">Sin ranking</span>
                               )}
                             </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-text-muted">Rango: </span>
+                              <div className="flex items-center gap-1.5">
+                                <RankBadge 
+                                  rankId={(u.highest_rank as RankId) || "unranked"} 
+                                  size="sm" 
+                                />
+                                {u.is_rank_locked && (
+                                  <ShieldCheck className="w-3.5 h-3.5 text-neon-green" />
+                                )}
+                              </div>
+                            </div>
                             <div className="flex items-center gap-1">
                               <span className="text-text-muted">Profit: </span>
                               <span className="text-neon-green font-bold font-mono">${lbEntry ? Number(lbEntry.total_profit).toLocaleString() : 0}</span>
@@ -821,11 +1014,51 @@ export default function AdminPage() {
                       {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
-                          onClick={() => { setShowEditProfitModal(u.id); setEditProfitValue(String(lbEntry?.total_profit || 0)); }}
+                          onClick={() => handleImpersonate(u.id)}
+                          disabled={impersonatingId === u.id}
+                          className="px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold hover:bg-orange-500/20 transition-colors flex items-center gap-1.5"
+                        >
+                          {impersonatingId === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                          Monitorear
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const newLock = !u.is_rank_locked;
+                            const { error } = await supabase.from('users').update({ is_rank_locked: newLock }).eq('id', u.id);
+                            if (!error) {
+                              setUsers(prev => prev.map(usr => usr.id === u.id ? { ...usr, is_rank_locked: newLock } : usr));
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors flex items-center gap-1.5 ${u.is_rank_locked ? "bg-neon-green/10 border-neon-green/20 text-neon-green" : "bg-white/5 border-white/10 text-text-muted hover:bg-white/10"}`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          {u.is_rank_locked ? "Rango Bloqueado" : "Bloquear Rango"}
+                        </button>
+                        <button
+                          onClick={() => { 
+                            setShowEditProfitModal(u.id); 
+                            setEditProfitValue(String(lbEntry?.total_profit || 0));
+                            setEditRankValue((u.highest_rank as RankId) || "unranked");
+                            setEditRankLocked(u.is_rank_locked);
+                          }}
                           className="px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/20 text-neon-green/70 text-xs font-bold hover:bg-neon-green/20 hover:text-neon-green transition-colors flex items-center gap-1.5"
                         >
                           <Trophy className="w-3.5 h-3.5" />
                           Editar Profit
+                        </button>
+                        <button
+                          onClick={() => openProfileEditor(u)}
+                          className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400/70 text-xs font-bold hover:bg-blue-500/20 hover:text-blue-400 transition-colors flex items-center gap-1.5"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Editar Perfil
+                        </button>
+                        <button
+                          onClick={() => setShowManualAccountModal(u.id)}
+                          className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400/70 text-xs font-bold hover:bg-purple-500/20 hover:text-purple-400 transition-colors flex items-center gap-1.5"
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                          Agregar Cuenta
                         </button>
                         <button
                           onClick={() => setShowDeleteUserModal(u.id)}
@@ -915,7 +1148,17 @@ export default function AdminPage() {
                         {acc.has_weekly_payouts && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-semibold">Weekly Pay</span>}
                         {acc.has_scaling_x2 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-semibold">Scaling x2</span>}
                         {acc.addon_split_90 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-semibold">Split 90%</span>}
-                        {acc.addon_split_100 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-semibold">Split 100%</span>}
+                      </div>
+                      {/* Actions */}
+                      <div className="flex justify-end pt-2 border-t border-white/5 mx-[-8px]">
+                        <button
+                          onClick={() => handleImpersonate(acc.user_id)}
+                          disabled={impersonatingId === acc.user_id}
+                          className="px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold hover:bg-orange-500/20 transition-colors flex items-center gap-1.5"
+                        >
+                          {impersonatingId === acc.user_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                          Monitorear Trader
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -1247,6 +1490,40 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-xs text-text-muted block mb-1">Rango Manual</label>
+                  <select
+                    value={editRankValue}
+                    onChange={(e) => setEditRankValue(e.target.value as RankId)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:border-neon-green/50 focus:outline-none"
+                  >
+                    <option value="unranked" className="bg-black">Unranked</option>
+                    <option value="novato" className="bg-black">Novato</option>
+                    <option value="warrior" className="bg-black">Warrior</option>
+                    <option value="elite" className="bg-black">Elite</option>
+                    <option value="legend" className="bg-black">Legend</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-end">
+                  <label className="flex items-center gap-2 cursor-pointer group py-2">
+                    <input
+                      type="checkbox"
+                      checked={editRankLocked}
+                      onChange={(e) => setEditRankLocked(e.target.checked)}
+                      className="hidden"
+                    />
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${editRankLocked ? "bg-neon-green border-neon-green" : "border-white/20 group-hover:border-white/40"}`}>
+                      {editRankLocked && <Check className="w-3 h-3 text-black font-bold" />}
+                    </div>
+                    <span className={`text-[10px] font-bold ${editRankLocked ? "text-neon-green" : "text-text-muted"}`}>
+                      FORZAR RANGO
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setShowEditProfitModal(null)}
@@ -1265,10 +1542,17 @@ export default function AdminPage() {
                           action: "edit_user_profit",
                           userId: showEditProfitModal,
                           newProfit: Number(editProfitValue),
+                          newRank: editRankValue !== "unranked" ? editRankValue : null,
+                          isLocked: editRankLocked
                         }),
                       });
                       if (res.ok) {
                         setShowEditProfitModal(null);
+                        setUsers(prev => prev.map(u => u.id === showEditProfitModal ? { 
+                          ...u, 
+                          highest_rank: editRankValue !== "unranked" ? editRankValue : u.highest_rank,
+                          is_rank_locked: editRankLocked
+                        } : u));
                         fetchData();
                       }
                     } catch (err) {
@@ -1277,16 +1561,12 @@ export default function AdminPage() {
                     setProcessingId(null);
                   }}
                   disabled={processingId === showEditProfitModal}
-                  className="py-2.5 rounded-xl bg-neon-green text-black text-sm font-bold flex items-center justify-center gap-2"
+                  className="py-2.5 rounded-xl bg-neon-green text-black text-sm font-extrabold flex items-center justify-center gap-2"
+                  style={{ fontFamily: "var(--font-orbitron)" }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {processingId === showEditProfitModal ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      Guardar
-                    </>
-                  )}
+                  {processingId === showEditProfitModal ? <Loader2 className="w-4 h-4 animate-spin" /> : "GUARDAR"}
                 </motion.button>
               </div>
             </motion.div>
@@ -1367,6 +1647,453 @@ export default function AdminPage() {
           </motion.div>
         </div>
       )}
+
+      {/* ============================================
+         MODAL: EDITAR PERFIL
+         ============================================ */}
+      {showProfileEditor && (() => {
+        const editingUser = users.find(u => u.id === showProfileEditor);
+        if (!editingUser) return null;
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => !savingProfile && setShowProfileEditor(null)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-lg glass-card p-6 border-blue-500/30 max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-400" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    EDITAR PERFIL
+                  </h3>
+                  <p className="text-xs text-text-muted">{editingUser.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Username */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Nombre de Usuario</label>
+                  <input
+                    type="text"
+                    value={profileEdits.username || ""}
+                    onChange={(e) => setProfileEdits(prev => ({ ...prev, username: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                  />
+                </div>
+
+                {/* Phases Passed + Is Funded + Balance */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Fases Completadas</label>
+                    <input
+                      type="number"
+                      value={profileEdits.phases_passed || 0}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, phases_passed: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Balance Cuenta ($)</label>
+                    <input
+                      type="number"
+                      value={profileEdits.account_balance || 0}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, account_balance: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 cursor-pointer pb-2.5">
+                      <input
+                        type="checkbox"
+                        checked={profileEdits.is_funded || false}
+                        onChange={(e) => setProfileEdits(prev => ({ ...prev, is_funded: e.target.checked }))}
+                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-neon-green focus:ring-neon-green/30"
+                      />
+                      <span className="text-[10px] uppercase tracking-widest text-text-muted font-bold">Fondeado</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Total Withdrawals */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Total Retirado ($)</label>
+                  <input
+                    type="number"
+                    value={profileEdits.total_withdrawals || 0}
+                    onChange={(e) => setProfileEdits(prev => ({ ...prev, total_withdrawals: Number(e.target.value) }))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                    min="0"
+                  />
+                </div>
+
+                {/* Top Finishes */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Top 3 Finishes</label>
+                    <input
+                      type="number"
+                      value={profileEdits.top_three_finishes || 0}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, top_three_finishes: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Top 10 Finishes</label>
+                    <input
+                      type="number"
+                      value={profileEdits.top_ten_finishes || 0}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, top_ten_finishes: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Rank + Lock */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Rango</label>
+                    <select
+                      value={profileEdits.highest_rank || "unranked"}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, highest_rank: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-blue-400/50 focus:outline-none"
+                    >
+                      <option value="unranked" className="bg-black">Unranked</option>
+                      <option value="novato" className="bg-black">Novato</option>
+                      <option value="warrior" className="bg-black">Warrior</option>
+                      <option value="elite" className="bg-black">Elite</option>
+                      <option value="legend" className="bg-black">Legend</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col justify-end gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer group py-2">
+                      <input
+                        type="checkbox"
+                        checked={profileEdits.is_rank_locked || false}
+                        onChange={(e) => setProfileEdits(prev => ({ ...prev, is_rank_locked: e.target.checked }))}
+                        className="hidden"
+                      />
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${profileEdits.is_rank_locked ? "bg-neon-green border-neon-green" : "border-white/20 group-hover:border-white/40"}`}>
+                        {profileEdits.is_rank_locked && <Check className="w-3 h-3 text-black font-bold" />}
+                      </div>
+                      <span className={`text-[10px] font-bold ${profileEdits.is_rank_locked ? "text-neon-green" : "text-text-muted"}`}>
+                        FORZAR RANGO
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Admin Toggle */}
+                <div className="border-t border-white/[0.06] pt-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={profileEdits.is_admin || false}
+                      onChange={(e) => setProfileEdits(prev => ({ ...prev, is_admin: e.target.checked }))}
+                      className="hidden"
+                    />
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${profileEdits.is_admin ? "bg-purple-500 border-purple-500" : "border-white/20 group-hover:border-white/40"}`}>
+                      {profileEdits.is_admin && <Check className="w-3 h-3 text-white font-bold" />}
+                    </div>
+                    <div>
+                      <span className={`text-xs font-bold ${profileEdits.is_admin ? "text-purple-400" : "text-text-muted"}`}>
+                        ADMINISTRADOR
+                      </span>
+                      <p className="text-[10px] text-text-muted/60">Otorga acceso al panel de administración</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  onClick={() => setShowProfileEditor(null)}
+                  disabled={savingProfile}
+                  className="py-2.5 rounded-xl border border-white/10 text-text-secondary text-sm font-bold hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  onClick={handleSaveProfile}
+                  disabled={savingProfile}
+                  className="py-2.5 rounded-xl bg-blue-500 text-white text-sm font-extrabold flex items-center justify-center gap-2"
+                  style={{ fontFamily: "var(--font-orbitron)" }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "GUARDAR"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
+      {showActivateModal && (() => {
+        const activatingTx = transactions.find(t => t.id === showActivateModal);
+        const activatingUser = activatingTx ? users.find(u => u.id === activatingTx.user_id) : null;
+        if (!activatingTx) return null;
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowActivateModal(null)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md glass-card p-6 border-neon-green/30"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-neon-green/10 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-neon-green" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-neon-green" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    ACTIVAR CUENTA
+                  </h3>
+                  <p className="text-xs text-text-muted">
+                    {activatingUser?.username || activatingTx.user_email} — {activatingTx.challenge_tier?.toUpperCase()} ${Number(activatingTx.account_size).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Login MT5</label>
+                  <input
+                    type="text"
+                    value={mt5Login}
+                    onChange={(e) => setMt5Login(e.target.value)}
+                    placeholder="ej: 50012345"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-neon-green/50 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Password MT5</label>
+                  <input
+                    type="text"
+                    value={mt5Password}
+                    onChange={(e) => setMt5Password(e.target.value)}
+                    placeholder="ej: Abc123!@#"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-neon-green/50 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Servidor MT5</label>
+                  <input
+                    type="text"
+                    value={mt5Server}
+                    onChange={(e) => setMt5Server(e.target.value)}
+                    placeholder="FundedSpread-Server"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-neon-green/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  onClick={() => setShowActivateModal(null)}
+                  className="py-2.5 rounded-xl border border-white/10 text-text-secondary text-sm font-bold hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  onClick={handleActivateWithCredentials}
+                  disabled={processingId === showActivateModal || !mt5Login.trim() || !mt5Password.trim()}
+                  className={`py-2.5 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 ${
+                    mt5Login.trim() && mt5Password.trim()
+                      ? "bg-neon-green text-black shadow-[0_0_15px_rgba(57,255,20,0.3)]"
+                      : "bg-white/5 text-text-muted cursor-not-allowed"
+                  }`}
+                  style={{ fontFamily: "var(--font-orbitron)" }}
+                  whileHover={mt5Login.trim() && mt5Password.trim() ? { scale: 1.02 } : {}}
+                  whileTap={mt5Login.trim() && mt5Password.trim() ? { scale: 0.98 } : {}}
+                >
+                  {processingId === showActivateModal ? <Loader2 className="w-4 h-4 animate-spin" /> : "ACTIVAR"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
+
+      {/* ============================================
+         MANUAL ACCOUNT CREATION MODAL
+         ============================================ */}
+      {showManualAccountModal && (() => {
+        const targetUser = users.find(u => u.id === showManualAccountModal);
+        return (
+          <div className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowManualAccountModal(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-bg-secondary border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2" style={{ fontFamily: "var(--font-orbitron)" }}>
+                  <Package className="w-5 h-5 text-purple-400" />
+                  Agregar Cuenta Manual
+                </h3>
+                <button
+                  onClick={() => setShowManualAccountModal(null)}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-text-muted hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-text-muted mb-5">
+                Para: <span className="text-white font-semibold">{targetUser?.username || targetUser?.email}</span>
+              </p>
+
+              <div className="space-y-4">
+                {/* Challenge Tier */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Tier del Challenge</label>
+                  <select
+                    value={manualAccount.challengeTier}
+                    onChange={(e) => {
+                      const tier = e.target.value;
+                      setManualAccount(prev => ({ ...prev, challengeTier: tier, accountSize: TIER_SIZES[tier] || 10000 }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-purple-400/50 focus:outline-none"
+                  >
+                    <option value="micro" className="bg-bg-secondary">Micro — $5,000</option>
+                    <option value="starter" className="bg-bg-secondary">Starter — $10,000</option>
+                    <option value="pro" className="bg-bg-secondary">Pro — $25,000</option>
+                    <option value="elite" className="bg-bg-secondary">Elite — $50,000</option>
+                    <option value="legend" className="bg-bg-secondary">Legend — $100,000</option>
+                    <option value="apex" className="bg-bg-secondary">Apex — $200,000</option>
+                  </select>
+                </div>
+
+                {/* Challenge Type */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Tipo de Challenge</label>
+                  <select
+                    value={manualAccount.challengeType}
+                    onChange={(e) => setManualAccount(prev => ({ ...prev, challengeType: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-purple-400/50 focus:outline-none"
+                  >
+                    <option value="classic_2phase" className="bg-bg-secondary">Clásico (2 Fases)</option>
+                    <option value="express_1phase" className="bg-bg-secondary">Express (1 Fase)</option>
+                  </select>
+                </div>
+
+                {/* Challenge Phase */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Fase Asignada</label>
+                  <select
+                    value={manualAccount.challengePhase}
+                    onChange={(e) => setManualAccount(prev => ({ ...prev, challengePhase: Number(e.target.value) }))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-purple-400/50 focus:outline-none"
+                  >
+                    <option value={1} className="bg-bg-secondary">Fase 1 (Evaluación)</option>
+                    {manualAccount.challengeType === "classic_2phase" && <option value={2} className="bg-bg-secondary">Fase 2 (Validación)</option>}
+                    <option value={3} className="bg-bg-secondary">Fondeada Oficial (Fase 3)</option>
+                  </select>
+                </div>
+
+                {/* Price paid */}
+                <div>
+                  <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Precio Pagado ($)</label>
+                  <input
+                    type="number"
+                    value={manualAccount.price}
+                    onChange={(e) => setManualAccount(prev => ({ ...prev, price: Number(e.target.value) }))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:border-purple-400/50 focus:outline-none"
+                    min="0"
+                    placeholder="Ej: 56"
+                  />
+                </div>
+
+                {/* MT5 Credentials */}
+                <div className="border-t border-white/5 pt-4">
+                  <p className="text-[10px] uppercase tracking-widest text-purple-400 font-bold mb-3">Credenciales MT5</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Login</label>
+                      <input
+                        type="text"
+                        value={manualAccount.mt5Login}
+                        onChange={(e) => setManualAccount(prev => ({ ...prev, mt5Login: e.target.value }))}
+                        placeholder="Ej: 500123"
+                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-purple-400/50 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Password</label>
+                      <input
+                        type="text"
+                        value={manualAccount.mt5Password}
+                        onChange={(e) => setManualAccount(prev => ({ ...prev, mt5Password: e.target.value }))}
+                        placeholder="Ej: abc123"
+                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-purple-400/50 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold block mb-1">Servidor</label>
+                    <input
+                      type="text"
+                      value={manualAccount.mt5Server}
+                      onChange={(e) => setManualAccount(prev => ({ ...prev, mt5Server: e.target.value }))}
+                      placeholder="FundedSpread-Server"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:border-purple-400/50 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="bg-purple-500/5 border border-purple-500/10 rounded-xl p-3">
+                  <p className="text-[10px] uppercase tracking-widest text-purple-400 font-bold mb-2">Resumen</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <span className="text-text-muted">Tier:</span>
+                    <span className="text-white font-bold uppercase">{manualAccount.challengeTier}</span>
+                    <span className="text-text-muted">Tamaño:</span>
+                    <span className="text-white font-bold font-mono">${manualAccount.accountSize.toLocaleString()}</span>
+                    <span className="text-text-muted">Tipo:</span>
+                    <span className="text-white font-bold">{manualAccount.challengeType === "classic_2phase" ? "Clásico 2F" : "Express 1F"}</span>
+                    <span className="text-text-muted">MT5:</span>
+                    <span className="text-white font-bold font-mono">{manualAccount.mt5Login || "—"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  onClick={() => setShowManualAccountModal(null)}
+                  className="py-2.5 rounded-xl border border-white/10 text-text-secondary text-sm font-bold hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  onClick={handleCreateManualAccount}
+                  disabled={creatingManualAccount || !manualAccount.mt5Login.trim() || !manualAccount.mt5Password.trim()}
+                  className={`py-2.5 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 ${
+                    manualAccount.mt5Login.trim() && manualAccount.mt5Password.trim()
+                      ? "bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:bg-purple-400"
+                      : "bg-white/5 text-text-muted cursor-not-allowed"
+                  }`}
+                  style={{ fontFamily: "var(--font-orbitron)" }}
+                  whileHover={manualAccount.mt5Login.trim() && manualAccount.mt5Password.trim() ? { scale: 1.02 } : {}}
+                  whileTap={manualAccount.mt5Login.trim() && manualAccount.mt5Password.trim() ? { scale: 0.98 } : {}}
+                >
+                  {creatingManualAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : "CREAR CUENTA"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

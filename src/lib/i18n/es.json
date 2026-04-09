@@ -1,0 +1,550 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "error": "Ha ocurrido un error",
+    "success": "Éxito",
+    "language": {
+      "es": "Español",
+      "en": "English"
+    }
+  },
+  "navbar": {
+    "home": "Inicio",
+    "panel": "Panel",
+    "challenges": "Retos",
+    "leaderboard": "Clasificación",
+    "pricing": "Precios",
+    "protocol": "El Protocolo",
+    "levels": "Niveles",
+    "dashboard": "IR AL PANEL",
+    "login": "Iniciar Sesión",
+    "register": "FONDEARME AHORA",
+    "enter": "Acceder"
+  },
+  "sidebar": {
+    "system": "Sistema"
+  },
+  "footer": {
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "support": "Soporte",
+    "contact": "Contacto"
+  },
+  "interactive": {
+    "portfolioValue": "Valor del Portafolio",
+    "total": "Total",
+    "winRate": "Tasa de Éxito",
+    "profitFactor": "Factor de Ganancia",
+    "level": "Nivel",
+    "clickToFlip": "Clic para ver",
+    "clickToReturn": "Clic para volver",
+    "whyTitle": "¿POR QUÉ FUNDED SPREAD?",
+    "whyDesc": "Capital real. Ganancias reales. Sin riesgo personal.",
+    "list": [
+      {
+        "text": "Cuentas fondeadas desde",
+        "highlight": "$5K hasta $200K"
+      },
+      {
+        "text": "Hasta",
+        "highlight": "90% de profit split"
+      },
+      {
+        "text": "Pagos con",
+        "highlight": "cripto (BTC, USDT)"
+      },
+      {
+        "text": "Sin",
+        "highlight": "límite de tiempo"
+      }
+    ],
+    "testimonial": "\"En 3 meses pasé de $35 a una cuenta fondeada de $50K.\"",
+    "testimonialAuthor": "— @CryptoPhantom, Trader Legend",
+    "ticker": [
+      {
+        "icon": "💰",
+        "text": "@TradeMaster42 retiró $4,200"
+      },
+      {
+        "icon": "🏆",
+        "text": "@AlphaFX superó el Nivel 2"
+      },
+      {
+        "icon": "🚀",
+        "text": "@NeonKing desbloqueó cuenta de $50K"
+      },
+      {
+        "icon": "💎",
+        "text": "@CryptoWolf ganó $8,750 este mes"
+      },
+      {
+        "icon": "⚡",
+        "text": "@DayTrader_Pro alcanzó 90% de profit split"
+      },
+      {
+        "icon": "🔥",
+        "text": "@FXMaster completó el reto Legend"
+      },
+      {
+        "icon": "💰",
+        "text": "@SwingTrader retiró $12,400"
+      },
+      {
+        "icon": "🏆",
+        "text": "@NeonElite superó todos los Niveles"
+      }
+    ]
+  },
+  "profileData": {
+    "id": "ID",
+    "memberSince": "Miembro desde",
+    "noWithdrawals": "Sin retiros aún",
+    "noWithdrawalsDesc": "Los retiros aparecerán aquí una vez que tu cuenta esté fondeada.",
+    "fullName": "Nombre Completo",
+    "phone": "Teléfono",
+    "country": "País",
+    "selectCountry": "Selecciona tu país",
+    "other": "Otro",
+    "editProfile": "Editar Perfil",
+    "changePhoto": "Cambiar Foto",
+    "kycTitle": "Verificación de Identidad",
+    "verified": "Verificado",
+    "locked": "Bloqueado",
+    "required": "Requerido",
+    "startKYC": "Iniciar Verificación KYC",
+    "kycVerifiedDesc": "Tu identidad ha sido verificada exitosamente. Estás habilitado para procesar retiros en tus cuentas fondeadas.",
+    "kycLockedDesc": "La verificación KYC se habilitará automáticamente cuando tengas una cuenta real (Fondeada) en positivo, lista para procesar tu primer retiro.",
+    "kycRequiredDesc": "¡Felicidades! Eres elegible para retirar. Por favor completa tu verificación de identidad para procesar tu pago.",
+    "withdrawalHistory": "Historial de Retiros"
+  },
+  "analytics": {
+    "sessionId": "Sesión ID:",
+    "optimalRange": "Rango Óptimo",
+    "totalTrades": "Total Operaciones",
+    "topPerformance": "Top 8% Rendimiento",
+    "won": "Ganadas",
+    "lost": "Perdidas",
+    "date": "Fecha",
+    "pairs": "Pares",
+    "notes": "Notas",
+    "avgRrr": "RRR Prom."
+  },
+  "hero": {
+    "badge": "Trading de Nueva Generación",
+    "title1": "TU VENTAJA.",
+    "title2": "NUESTRO CAPITAL.",
+    "description": "Opera con hasta <span class=\"text-text-primary font-semibold\">$200,000</span> de nuestro capital. Quédate con hasta el <span class=\"text-neon-green font-semibold\">90%</span> de las ganancias. Paga con cripto. Sin arriesgar tu dinero.",
+    "startChallenge": "FONDEARME AHORA",
+    "howItWorks": "VER CÓMO FUNCIONA",
+    "traits": {
+      "secure": "Pagos Seguros",
+      "instant": "Activación Inmediata",
+      "traders": "12,500+ Traders"
+    }
+  },
+  "stats": {
+    "paid": "Pagado a Traders",
+    "active": "Traders Activos",
+    "avg": "Pago Promedio",
+    "split": "Profit Split Máx."
+  },
+  "pricing": {
+    "badge": "Elige Tu Arena",
+    "title1": "ELIGE TU",
+    "title2": "RETO",
+    "description": "Selecciona tu tipo de reto y tamaño de cuenta. Paga con cripto e inicia tu camino.",
+    "recommended": "RECOMENDADO",
+    "types": {
+      "express": "1 Fase",
+      "expressDesc": "Target 10% → Cuenta Fondeada",
+      "classic": "2 Fases",
+      "classicDesc": "Fase 1 (+8%) → Fase 2 (+5%) → Cuenta Fondeada"
+    },
+    "features": {
+      "account": "Cuenta de",
+      "phase1": "Fase 1",
+      "phase2": "Fase 2",
+      "dailyDD": "DD Diario",
+      "maxDD": "DD Máx",
+      "profitSplit": "Profit Split Base",
+      "minDays": "días mínimos",
+      "support": "Soporte Prioritario",
+      "vipSupport": "Soporte VIP",
+      "vipExtraSupport": "Soporte VIP Extra",
+      "target": "Objetivo",
+      "noTimeLimit": "Sin Límite de Tiempo"
+    },
+    "card": {
+      "refund": "Reembolsable",
+      "getFunded": "Elegir",
+      "or": "o",
+      "popular": "POPULAR",
+      "perChallenge": "/ reto"
+    }
+  },
+  "protocol": {
+    "title1": "EL",
+    "title2": "PROTOCOLO",
+    "description": "Tres simples pasos para desbloquear tu máximo potencial de trading y fondearte.",
+    "steps": {
+      "1": {
+        "title": "FONDEAR",
+        "desc": "Elige el tamaño de tu reto y obtén tu cuenta de evaluación al instante."
+      },
+      "2": {
+        "title": "OPERAR",
+        "desc": "Alcanza los objetivos de ganancia respetando las reglas de drawdown."
+      },
+      "3": {
+        "title": "COBRAR",
+        "desc": "Consigue tu fondeo y quédate con hasta el 90% de tus ganancias. Retira en cripto cuando quieras."
+      }
+    }
+  },
+  "levels": {
+    "title1": "SISTEMA DE",
+    "title2": "NIVELES",
+    "description": "Supera objetivos. Escala tu cuenta. Desbloquea mayores ganancias.",
+    "level": "Nivel",
+    "target_label": "Objetivo (CUMPLIR AL MENOS UNO)",
+    "data": {
+      "novato": {
+        "target": "Pasar una fase de evaluación",
+        "reward": "Desbloquea Etiqueta de Rango"
+      },
+      "warrior": {
+        "target": "Retirar +$1,000 acumulado",
+        "reward": "Etiqueta Premium y Estatus"
+      },
+      "elite": {
+        "target": "Retirar +$3,000 o entrar al Top 10",
+        "reward": "Distinción de Alto Rango"
+      },
+      "legend": {
+        "target": "Top 3 Mundial",
+        "reward": "Estado Legendario y Ventajas"
+      }
+    }
+  },
+  "cta": {
+    "title1": "EL MERCADO",
+    "title2": "NO ESPERA.",
+    "description": "Tú tampoco deberías. Empieza a operar con hasta $200,000 hoy.",
+    "button": "FONDEARME AHORA",
+    "footer": "Sin capital propio · Sin riesgo · Pagos con cripto"
+  },
+  "profileDropdown": {
+    "profile": "Mi Perfil",
+    "settings": "Ajustes",
+    "logout": "Cerrar Sesión",
+    "signingOut": "Cerrando...",
+    "language": "Idioma",
+    "online": "En Línea"
+  },
+  "auth": {
+    "loginTab": "Iniciar Sesión",
+    "registerTab": "Registrarse",
+    "fullName": "Nombre Completo",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "loginBtn": "ACCEDER",
+    "registerBtn": "CREAR CUENTA",
+    "or": "o",
+    "google": "Continuar con Google",
+    "apple": "Continuar con Apple",
+    "footerPlain": "Seguro · Encriptado · ",
+    "footerNeon": "En Línea"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido,",
+    "activeChallenge": "Reto Activo",
+    "profit": "Ganancia",
+    "loss": "Pérdida",
+    "pnlEmpty": "No hay datos de PnL todavía",
+    "equityCurve": "CURVA DE EQUIDAD",
+    "performanceMetrics": "Métricas de rendimiento en tiempo real",
+    "periods": {
+      "1w": "1S",
+      "1m": "1M",
+      "3m": "3M"
+    },
+    "recentTrades": "OPERACIONES RECIENTES",
+    "headers": {
+      "symbol": "Símbolo",
+      "type": "Tipo",
+      "entry": "Entrada",
+      "exit": "Salida",
+      "pnl": "P&L"
+    },
+    "errors": {
+      "invalidBalance": "Error: La cuenta que intentas vincular no tiene el balance correcto o no es una cuenta Demo. Por favor, crea una nueva cuenta Demo con el balance exacto y en USD.",
+      "accountInUse": "Error: Esta cuenta de MT5 ya está vinculada a otro Challenge. Por favor, verifica tus datos de registro.",
+      "linkingError": "Error de vinculación:"
+    },
+    "calculating": "Calculando...",
+    "readyForPayout": "¡LISTO PARA RETIRO!",
+    "withdrawSuccess": "Tu solicitud de retiro ha sido registrada. El equipo de operaciones procesará tu pago.",
+    "loading": "Cargando Dashboard...",
+    "noActiveChallenge": {
+      "title": "No tienes un challenge activo",
+      "desc": "Adquiere un challenge para comenzar tu carrera como trader fondeado y acceder a capital institucional.",
+      "button": "Ver planes de Fondeo"
+    },
+    "pending": {
+      "title": "¡PAGO CONFIRMADO!",
+      "desc1": "Tu challenge de",
+      "desc2": "está en preparación.",
+      "whatsNext": "¿Qué sigue ahora?",
+      "step1": "Nuestro sistema automatizado está configurando tu cuenta de financiamiento en MetaTrader 5 en servidores institucionales.",
+      "step2": "Tu cuenta será DEMO con el balance exacto.",
+      "step3": "Motor de riesgo integrado para monitoreo en vivo.",
+      "step4": "Recibirás un correo con tus credenciales seguras en 5 a 15 mins.",
+      "creatingServer": "Creando Servidor MT5..."
+    },
+    "selectedAccount": "Cuenta Seleccionada",
+    "alertsLabel": "Alertas",
+    "liveMarket": "Mercado en Vivo",
+    "alerts": {
+      "suspended": "⚠ CUENTA SUSPENDIDA",
+      "attention": "⚠ ATENCIÓN REQUERIDA",
+      "ddExceeded": "Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Diario del 5%. Contacta soporte para revisar tu cuenta.",
+      "ddExceededShort": "Drawdown Diario excedió 5%",
+      "suspendedReason": "Tu cuenta de trading ha sido suspendida:"
+    },
+    "welcomeBack": "Bienvenido de nuevo,",
+    "levelUp": {
+      "congrats": "¡Felicidades! Has alcanzado el objetivo de",
+      "express": "Fase actual: Evaluación Express (10%)",
+      "phase1": "Fase actual: Evaluación 1 (8%)",
+      "phase2": "Fase actual: Evaluación 2 (5%)",
+      "checkpoint1": "Nivel actual: Checkpoint",
+      "checkpoint2": "(+20% para escalar)"
+    },
+    "badges": {
+      "express": "CHALLENGE 1 FASE",
+      "classic": "CHALLENGE 2 FASES",
+      "split": "SPLIT",
+      "scaling": "+ ESCALAMIENTO X2"
+    },
+    "buttons": {
+      "withdraw": "Retirar Profit",
+      "scale": "Invertir y Escalar x2",
+      "levelUp": "SUBIR DE NIVEL"
+    },
+    "progress": {
+      "toNextCheckpoint": "hacia el siguiente checkpoint"
+    },
+    "stats": {
+      "totalBalance": "Balance Total",
+      "currentEquity": "Equidad Actual",
+      "todayPnl": "P&L de Hoy",
+      "targetSinglePhase": "Objetivo Fase Única:",
+      "targetPhase": "Objetivo Fase",
+      "targetCheckpoint": "Objetivo Checkpoint:",
+      "dailyLimit": "Límite Diario:",
+      "checkpointProgress": "Progreso Checkpoint"
+    },
+    "gauge": {
+      "dailyDrawdown": "Drawdown Diario",
+      "riskActive": "Gestión de Riesgo Activa"
+    },
+    "payout": {
+      "nextPayout": "Próximo Pago"
+    },
+    "withdrawBtn": "RETIRAR GANANCIAS",
+    "accountCredentials": {
+      "title": "CREDENCIALES",
+      "login": "Login ID",
+      "password": "Contraseña Maestra",
+      "server": "Servidor",
+      "plan": "Plan",
+      "accountSize": "Cuenta",
+      "type": "Tipo",
+      "leverage": "Apalancamiento"
+    }
+  },
+  "withdraw": {
+    "title": "RETIRAR GANANCIAS",
+    "subtitle": "Solicita tu retiro en USDT",
+    "breakdown": "Desglose de Ganancias",
+    "totalProfit": "Ganancia Total",
+    "yourSplit": "Tu Parte",
+    "companySplit": "Parte de la Empresa",
+    "youReceive": "Recibes",
+    "networkFeeNote": "La comisión de red será descontada del monto enviado.",
+    "selectNetwork": "Selecciona la Red",
+    "walletAddress": "Dirección USDT",
+    "requestBtn": "SOLICITAR RETIRO",
+    "confirmTitle": "Confirma tu Retiro",
+    "amount": "Monto",
+    "network": "Red",
+    "address": "Dirección",
+    "confirmNote": "Tu solicitud será revisada por el equipo. Recibirás tu pago en menos de 24 horas.",
+    "goBack": "← Volver",
+    "confirmBtn": "CONFIRMAR",
+    "processing": "PROCESANDO...",
+    "successTitle": "¡SOLICITUD ENVIADA!",
+    "successDesc": "Tu retiro ha sido registrado. El equipo de operaciones procesará tu pago en USDT.",
+    "close": "Cerrar",
+    "errorTitle": "ERROR",
+    "tryAgain": "Intentar de Nuevo",
+    "minDaysTitle": "Días Mínimos de Operación",
+    "minDaysDesc": "Necesitas al menos {required} días operados con operaciones válidas (≥0.3% de ganancia). Llevas {current} días.",
+    "errors": {
+      "invalidAddress": "Dirección de wallet inválida para la red seleccionada.",
+      "minAmount": "El monto mínimo de retiro es $100.",
+      "maxAmount": "El monto supera tu ganancia disponible.",
+      "minDays": "No cumples con el mínimo de días operados.",
+      "generic": "Error al procesar tu solicitud. Inténtalo de nuevo."
+    },
+    "availableProfit": "Ganancia Disponible",
+    "availableProfitNote": "Puedes retirar desde $100 hasta el total de tus ganancias.",
+    "withdrawAmount": "Monto a Retirar"
+  },
+  "checkout": {
+    "title": "ELIGE TU",
+    "titleHighlight": "RETO",
+    "subtitle": "Selecciona tu tipo de reto y tamaño de cuenta. Paga con cripto e inicia tu camino.",
+    "types": {
+      "express": {
+        "label": "1 Fase",
+        "desc": "Target 10% → Cuenta Fondeada"
+      },
+      "classic": {
+        "label": "2 Fases",
+        "desc": "Fase 1 (+8%) → Fase 2 (+5%) → Cuenta Fondeada"
+      }
+    },
+    "features": {
+      "accountOf": "Cuenta de",
+      "phase1_8_phase2_5": "Fase 1: +8% | Fase 2: +5%",
+      "target1Phase_10": "Objetivo 1 Fase: +10%",
+      "dd4_10": "4% DD Diario / 10% DD Máx",
+      "dd3_5": "3% DD Diario / 5% DD Máx",
+      "profitSplit80": "80% Profit Split Base",
+      "minDays5": "5 días mínimos",
+      "minDays2": "2 días mínimos",
+      "supportPriority": "Soporte Prioritario",
+      "supportVIP": "Soporte VIP",
+      "supportVIPExtra": "Soporte VIP Extra"
+    },
+    "badges": {
+      "recommended": "RECOMENDADO",
+      "mostPopular": "MÁS POPULAR"
+    },
+    "perChallenge": "/ reto",
+    "chooseBtn": "ELEGIR",
+    "continueToPayment": "CONTINUAR AL PAGO",
+    "selectAChallenge": "SELECCIONA UN RETO",
+    "trust": {
+      "securePayments": "Pagos Seguros",
+      "cryptoOptions": "BTC y USDT",
+      "instantActivation": "Activación Inmediata"
+    },
+    "confirm": {
+      "title": "CONFIRMAR TU PEDIDO",
+      "type": "Tipo:",
+      "challenge": "Reto:",
+      "accountSize": "Tamaño de Cuenta:",
+      "payment": "Pago:",
+      "boostAccount": "POTENCIA TU CUENTA",
+      "addons": {
+        "rawSpread": {
+          "title": "Spreads Cero",
+          "desc": "Desde 0.0 pips"
+        },
+        "zeroCommission": {
+          "title": "Cero Comisiones",
+          "desc": "$0 por lote operado"
+        },
+        "weeklyPayouts": {
+          "title": "Retiros Semanales",
+          "desc": "Retira cada 7 días"
+        },
+        "scalingX2": {
+          "title": "Escalamiento x2",
+          "desc": "Duplica tu capital al llegar al +20% de Profit"
+        }
+      },
+      "profitSplit": {
+        "title": "Reparto de Ganancias",
+        "base": "Base",
+        "included": "Incluido",
+        "premium": "Premium",
+        "max": "Máximo",
+        "elite": "Élite"
+      },
+      "total": "Total a Pagar:",
+      "payWithCrypto": "PAGAR CON CRIPTO",
+      "goBack": "← Volver atrás"
+    },
+    "processing": {
+      "title": "CREANDO TU FACTURA...",
+      "desc": "Conectando con la pasarela de pagos. Serás redirigido en breve."
+    },
+    "success": {
+      "title": "¡PAGO RECIBIDO!",
+      "desc": "Tu reto está siendo activado. Lo verás en tu Panel en unos minutos.",
+      "goToDashboard": "IR AL PANEL"
+    },
+    "error": {
+      "title": "ERROR DE PAGO",
+      "tryAgain": "Intentar de Nuevo"
+    },
+    "messages": {
+      "loginRequired": "Debes iniciar sesión o registrarte para comprar un reto.",
+      "invoiceError": "Error al crear la factura",
+      "networkError": "Error de red. Por favor, inténtalo de nuevo."
+    }
+  },
+  "leaderboard": {
+    "ranks": {
+      "Beginner": "Principiante",
+      "Novice": "Novato",
+      "Rookie": "Novato",
+      "Warrior": "Guerrero",
+      "Expert": "Experto",
+      "Master": "Maestro",
+      "Grandmaster": "Gran Maestro",
+      "Legend": "Leyenda",
+      "Champion": "Campeón",
+      "Elite": "Elite",
+      "Pro": "Pro"
+    },
+    "verified": "Usuario KYC Verificado",
+    "top": "TOP #",
+    "withdrew": "Retiró",
+    "winRate": "Tasa Éxito",
+    "winRateEn": "Win Rate",
+    "rr": "R:R",
+    "title": "CLASIFICACIÓN",
+    "titleHighlight": "GLOBAL",
+    "subtitle": "Compite contra la élite. Alcanza el estatus de Leyenda.",
+    "table": {
+      "country": "País",
+      "you": "Tú",
+      "noWithdrawalsFallback": "Aún sin retiros — ¡opera para subir!",
+      "loading": "Cargando clasificados..."
+    },
+    "prizePool": {
+      "title": "PREMIOS (Abril)",
+      "desc": "Compite por una parte de los $10,000 en premios en efectivo depositados directamente a tu cuenta.",
+      "place": "Lugar"
+    },
+    "countdown": {
+      "deliveredTitle": "¡Premios Entregados!",
+      "deliveredDesc": "Una nueva temporada comienza pronto...",
+      "endsIn": "Termina en:",
+      "days": "Días",
+      "hours": "Hrs",
+      "mins": "Min"
+    },
+    "share": {
+      "title": "Comparte tu Rango",
+      "desc": "Presume tus habilidades de trading. Invita amigos a competir en el próximo torneo.",
+      "btn": "Compartir Perfil"
+    }
+  }
+}

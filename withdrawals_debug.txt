@@ -1,0 +1,34 @@
+[
+  {
+    "id": "91d39756-b3ac-49a2-af1c-c78daba071fa",
+    "user_id": "44e1de2c-ed20-4473-8178-654565e45e6a",
+    "account_id": "29651abc-720d-4065-be62-7e4b4e64d9ae",
+    "amount": 1000,
+    "user_amount": 800,
+    "network": "TRC20",
+    "wallet_address": "TDemoWallet2",
+    "status": "approved",
+    "admin_notes": null,
+    "tx_hash": null,
+    "profit_split_pct": 80,
+    "created_at": "2026-04-01T22:00:00+00:00",
+    "processed_at": "2026-04-01T22:00:00+00:00",
+    "completed_at": null
+  },
+  {
+    "id": "b448e5ef-67f8-4140-919d-c7bad87f1f7a",
+    "user_id": "44e1de2c-ed20-4473-8178-654565e45e6a",
+    "account_id": "29651abc-720d-4065-be62-7e4b4e64d9ae",
+    "amount": 828.45,
+    "user_amount": 745.61,
+    "network": "TRC20",
+    "wallet_address": "TShowcaseManualInsertXXXXXXXXXXXXX",
+    "status": "approved",
+    "admin_notes": null,
+    "tx_hash": null,
+    "profit_split_pct": 90,
+    "created_at": "2026-04-01T22:00:00+00:00",
+    "processed_at": "2026-04-01T22:00:00+00:00",
+    "completed_at": null
+  }
+]

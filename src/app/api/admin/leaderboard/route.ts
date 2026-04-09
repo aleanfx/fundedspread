@@ -36,15 +36,21 @@ export async function POST(request: Request) {
 
         switch (action) {
             case "edit_user_profit": {
-                const { userId, newProfit } = body;
-
+                const { userId, newProfit, newRank, isLocked } = body;
+                
                 if (!userId || newProfit === undefined) {
                     return NextResponse.json({ error: "Faltan parámetros" }, { status: 400 });
                 }
 
                 const profitNum = Number(newProfit);
-                const rankTitle = profitNum >= 3000 ? "elite" : profitNum >= 1000 ? "warrior" : "novato";
-                const checkpointLevel = profitNum >= 3000 ? 3 : profitNum >= 1000 ? 2 : 1;
+                let rankTitle = newRank;
+                
+                // If no manual rank provided, calculate it based on profit
+                if (!rankTitle) {
+                  rankTitle = profitNum >= 3000 ? "elite" : profitNum >= 1000 ? "warrior" : "novato";
+                }
+                
+                const checkpointLevel = rankTitle === "legend" ? 4 : rankTitle === "elite" ? 3 : rankTitle === "warrior" ? 2 : 1;
 
                 // Check if user has a leaderboard entry
                 const { data: existing } = await supabaseAdmin
@@ -57,7 +63,11 @@ export async function POST(request: Request) {
                 if (existing) {
                     await supabaseAdmin
                         .from("leaderboard_traders")
-                        .update({ total_profit: profitNum, rank_title: rankTitle, checkpoint_level: checkpointLevel })
+                        .update({ 
+                            total_profit: profitNum, 
+                            rank_title: rankTitle, 
+                            checkpoint_level: checkpointLevel 
+                        })
                         .eq("id", existing.id);
                 } else {
                     // Fetch user profile to create entry
@@ -90,6 +100,16 @@ export async function POST(request: Request) {
                             generation_month: currentMonth,
                         });
                 }
+
+                // IMPORTANT: Permanently update the 'users' table to reflect this rank if it's locked
+                // or just to keep the record of 'highest_rank'
+                await supabaseAdmin
+                    .from("users")
+                    .update({
+                        highest_rank: rankTitle,
+                        is_rank_locked: isLocked ?? false
+                    })
+                    .eq("id", userId);
 
                 console.log(`✏️ Admin updated user ${userId} leaderboard profit to $${profitNum}`);
                 break;

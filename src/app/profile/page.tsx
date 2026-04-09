@@ -22,9 +22,11 @@ import {
     Download,
     WalletCards
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getSafeSession, hasImpersonationCookie } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { RankBadge } from "@/components/RankBadge";
+import { type RankId } from "@/lib/utils/rankSystem";
 
 /* ============================================
    ANIMATION VARIANTS
@@ -97,11 +99,12 @@ const VerifiedBadge = ({ className = "w-5 h-5", checkColor = "#000000", badgeCol
    ============================================ */
 export default function ProfilePage() {
     const { t, language } = useLanguage();
-    const supabase = createClient();
+    const [supabase] = useState(() => createClient());
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [account, setAccount] = useState<MT5Account | null>(null);
     const [approvedWithdrawals, setApprovedWithdrawals] = useState<any[]>([]);
     const [userData, setUserData] = useState<any>(null);
+    const [isImpersonating, setIsImpersonating] = useState(false);
     const [loading, setLoading] = useState(true);
 
 
@@ -115,45 +118,67 @@ export default function ProfilePage() {
 
     useEffect(() => {
         const loadData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
+            try {
+                setLoading(true);
 
-            if (user) {
-                // Fetch user data for admin/verified status
-                const { data: userDb } = await supabase
-                    .from("users")
-                    .select("is_admin, is_verified")
-                    .eq("id", user.id)
-                    .single();
-                
-                if (userDb) setUserData(userDb);
+                // Only check impersonation if admin cookie exists
+                const impPromise = hasImpersonationCookie()
+                    ? fetch('/api/admin/impersonate/data').then(r => r.ok ? r : null).catch(() => null)
+                    : Promise.resolve(null);
 
-                const { data } = await supabase
-                    .from("mt5_accounts")
-                    .select("*")
-                    .eq("user_id", user.id)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single();
+                const [sessionResponse, impResponse] = await Promise.all([
+                    getSafeSession(),
+                    impPromise
+                ]);
 
-                if (data) setAccount(data);
+                const authUser = sessionResponse.data.session?.user ?? null;
+                setUser(authUser);
 
-                // Fetch approved withdrawals for stackable certificates
-                const { data: withdrawalsData } = await supabase
-                    .from("withdrawal_requests")
-                    .select("*")
-                    .eq("user_id", user.id)
-                    .eq("status", "approved")
-                    .order("created_at", { ascending: true });
+                let foundImpersonation = false;
+                if (impResponse) {
+                    const impData = await impResponse.json();
+                    if (impData.userData) {
 
-                if (withdrawalsData && withdrawalsData.length > 0) {
-                    setApprovedWithdrawals(withdrawalsData);
+                        setUserData(impData.userData);
+                        setAccount(impData.accountsData?.[0] || null);
+
+                        if (impData.user) {
+                            setUser(impData.user);
+                        }
+
+
+                        if (impData.withdrawalsData) {
+                            setApprovedWithdrawals(impData.withdrawalsData);
+                        }
+                        setIsImpersonating(true);
+                        foundImpersonation = true;
+                    }
                 }
+
+                if (!foundImpersonation && authUser) {
+                    const [userDbResponse, accountsResponse, withdrawalsResponse] = await Promise.all([
+                        supabase.from("users").select("is_admin, is_verified").eq("id", authUser.id).single(),
+                        supabase.from("mt5_accounts").select("*").eq("user_id", authUser.id).order("created_at", { ascending: false }).limit(1).single(),
+                        supabase.from("withdrawal_requests").select("*").eq("user_id", authUser.id).eq("status", "approved").order("created_at", { ascending: true })
+                    ]);
+
+                    if (userDbResponse.data) setUserData(userDbResponse.data);
+                    if (accountsResponse.data) setAccount(accountsResponse.data);
+
+                    if (withdrawalsResponse.data && withdrawalsResponse.data.length > 0) {
+                        setApprovedWithdrawals(withdrawalsResponse.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Profile: Critical error in loadData", err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         loadData();
     }, [supabase]);
+
+
 
 
     const handleOpenEdit = () => {
@@ -219,13 +244,30 @@ export default function ProfilePage() {
         }
     };
 
-    const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
-    const initials = displayName.charAt(0).toUpperCase();
-    const displayId = user?.id?.slice(0, 8) || "—";
     const locale = language === 'es' ? 'es-ES' : 'en-US';
     const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString(locale, { year: "numeric", month: "long" }) : "—";
 
+
+    const displayName = userData?.full_name || userData?.username || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
+    const initials = displayName && displayName !== "Trader" ? displayName.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || "T");
+    const displayId = userData?.id?.slice(0, 8) || user?.id?.slice(0, 8) || "—";
+
     const isVerified = userData?.is_admin || userData?.is_verified || user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+    if (loading) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                    className="w-12 h-12 border-2 border-neon-green/20 border-t-neon-green rounded-full"
+                />
+                <p className="text-text-muted text-xs uppercase tracking-widest animate-pulse" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    {t("common.loading") || "Cargando Perfil..."}
+                </p>
+            </div>
+        );
+    }
 
     const hasPhase1Cert = account && (account.account_status === 'phase2_ready' || (account as any).challenge_phase === 2 || account.account_status === 'funded' || account.account_status === 'checkpoint_reached');
     const hasFundedCert = account && (account.account_status === 'funded' || account.account_status === 'checkpoint_reached');
@@ -253,24 +295,27 @@ export default function ProfilePage() {
 
     return (
         <motion.div
-            className="p-6 max-w-[1000px] mx-auto"
+            className="p-4 sm:p-6 max-w-[1000px] mx-auto"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
         >
             {/* Profile Header */}
-            <motion.div variants={itemVariants} className="glass-card p-6 border border-border-subtle mb-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-5">
+            <motion.div variants={itemVariants} className="glass-card p-4 sm:p-6 border border-border-subtle mb-6 relative">
+                <div className="flex flex-row items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-5 min-w-0 flex-1">
                         {/* Avatar */}
-                        <div className="relative">
-                            <div className="w-20 h-20 rounded-full bg-neon-green/20 border-2 border-neon-green/50 flex items-center justify-center overflow-hidden"
+                        <div className="relative shrink-0">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-neon-green/20 border-2 border-neon-green/50 flex items-center justify-center overflow-hidden"
                                 style={{ boxShadow: "0 0 20px rgba(57,255,20,0.3)" }}>
-                                {user?.user_metadata?.avatar_url && !avatarError ? (
+                                {(userData?.avatar_url || user?.user_metadata?.avatar_url) && !avatarError ? (
                                     <img
-                                        src={user.user_metadata.avatar_url}
+                                        src={userData?.avatar_url || user?.user_metadata?.avatar_url}
                                         alt="Avatar"
                                         className="w-full h-full object-cover"
+                                        referrerPolicy="no-referrer"
+                                        crossOrigin="anonymous"
+                                        loading="eager"
                                         onError={() => setAvatarError(true)}
                                     />
                                 ) : (
@@ -291,13 +336,18 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Name & Info */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 py-1">
                             <h1
-                                className="text-base sm:text-2xl font-bold text-text-primary uppercase flex items-center gap-1.5 sm:gap-2 leading-tight sm:leading-none"
+                                className="text-sm sm:text-2xl font-bold text-text-primary uppercase flex items-center gap-1.5 sm:gap-2 leading-tight sm:leading-none max-w-full"
                                 style={{ fontFamily: "var(--font-orbitron)" }}
                             >
-                                <span className="truncate">{displayName}</span>
-                                {isVerified && <VerifiedBadge className="w-4 h-4 sm:w-6 sm:h-6 shrink-0 mt-[1px]" />}
+                                <span className="truncate max-w-[180px] sm:max-w-none">{displayName}</span>
+                                <div className="flex items-center gap-1.5">
+                                    {isVerified && <VerifiedBadge className="w-3.5 h-3.5 sm:w-6 sm:h-6 shrink-0" />}
+                                    {userData?.is_rank_locked && userData?.highest_rank && userData.highest_rank !== 'unranked' && (
+                                        <RankBadge rankId={userData.highest_rank} size="sm" className="inline-flex shrink-0" showName={true} />
+                                    )}
+                                </div>
                             </h1>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
                                 <span className="text-text-muted text-xs">{t("profileData.id")}: #{displayId}</span>
@@ -309,9 +359,10 @@ export default function ProfilePage() {
 
                     <button
                         onClick={handleOpenEdit}
-                        className="px-4 py-2.5 rounded-lg text-xs font-medium bg-white/5 border border-border-subtle text-text-secondary hover:bg-white/10 transition-all flex items-center gap-2"
+                        className="p-2.5 sm:px-4 sm:py-2.5 rounded-lg text-xs font-medium bg-white/5 border border-border-subtle text-text-secondary hover:bg-white/10 transition-all flex items-center gap-2 shrink-0"
                     >
-                        <Pencil className="w-3.5 h-3.5" /> {t("profileData.editProfile")}
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{t("profileData.editProfile")}</span>
                     </button>
                 </div>
             </motion.div>
@@ -372,7 +423,7 @@ export default function ProfilePage() {
                 {/* RIGHT COLUMN */}
                 <div className="space-y-6">
 
-                    {/* Payout History (Real — Empty State) */}
+                    {/* Payout History */}
                     <motion.div variants={itemVariants} className="glass-card p-5 border border-border-subtle">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-text-primary flex items-center gap-2" style={{ fontFamily: "var(--font-orbitron)" }}>
@@ -380,11 +431,33 @@ export default function ProfilePage() {
                             </h3>
                         </div>
 
-                        <div className="py-8 text-center">
-                            <TetherIcon className="w-8 h-8 text-text-muted mx-auto mb-2 opacity-30" />
-                            <p className="text-text-muted text-sm">{t("profileData.noWithdrawals")}</p>
-                            <p className="text-text-muted text-xs mt-1">{t("profileData.noWithdrawalsDesc")}</p>
-                        </div>
+                        {approvedWithdrawals.length > 0 ? (
+                            <div className="space-y-3">
+                                {approvedWithdrawals.map((w, i) => (
+                                    <div key={w.id || i} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded bg-neon-green/10 flex items-center justify-center shrink-0">
+                                                <Bitcoin className="w-4 h-4 text-neon-green" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider truncate" style={{ fontFamily: "var(--font-orbitron)" }}>Retiro Aprobado</p>
+                                                <p className="text-[9px] sm:text-[10px] text-text-muted truncate">{new Date(w.processed_at || w.created_at).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs font-bold text-neon-green">+${(w.user_amount || w.amount).toLocaleString()}</p>
+                                            <p className="text-[9px] text-text-muted uppercase">Completado</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-8 text-center">
+                                <TetherIcon className="w-8 h-8 text-text-muted mx-auto mb-2 opacity-30" />
+                                <p className="text-text-muted text-sm">{t("profileData.noWithdrawals")}</p>
+                                <p className="text-text-muted text-xs mt-1">{t("profileData.noWithdrawalsDesc")}</p>
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Certificados Profesionales */}
@@ -397,19 +470,19 @@ export default function ProfilePage() {
 
                         <div className="flex flex-col gap-3">
                             {hasPhase1Cert && (
-                                <a 
+                                <a
                                     href={`/certificate/phase1?data=${btoa(JSON.stringify({ n: displayName, d: new Date().toISOString().split('T')[0] }))}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5 hover:border-emerald-500/30 hover:bg-white/5 transition-all group"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-                                            <CheckCircle className="w-5 h-5 text-emerald-400" />
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors shrink-0">
+                                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500 uppercase" style={{ fontFamily: "var(--font-orbitron)" }}>Fase 1 Superada</p>
-                                            <p className="text-xs text-text-muted flex items-center gap-1">Certificado Oficial</p>
+                                        <div className="min-w-0">
+                                            <p className="text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500 uppercase truncate" style={{ fontFamily: "var(--font-orbitron)" }}>Fase 1 Superada</p>
+                                            <p className="text-[10px] sm:text-xs text-text-muted flex items-center gap-1 truncate">Certificado Oficial</p>
                                         </div>
                                     </div>
                                     <button className="p-2 bg-white/5 rounded-md text-text-muted group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-all">
@@ -417,21 +490,21 @@ export default function ProfilePage() {
                                     </button>
                                 </a>
                             )}
-                            
+
                             {hasFundedCert && (
-                                <a 
-                                    href={`/certificate/funded?data=${btoa(JSON.stringify({ n: displayName, d: new Date().toISOString().split('T')[0], a: account?.initial_balance || 10000 }))}`}
+                                <a
+                                    href={`/certificate/funded?data=${btoa(JSON.stringify({ n: displayName, d: new Date().toISOString().split('T')[0], a: account?.initial_balance || 25000 }))}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5 hover:border-purple-500/30 hover:bg-white/5 transition-all group shadow-[0_0_15px_rgba(168,85,247,0.02)]"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover:bg-purple-500/20 transition-colors">
-                                            <Trophy className="w-5 h-5 text-purple-400" />
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover:bg-purple-500/20 transition-colors shrink-0">
+                                            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-purple-500 uppercase" style={{ fontFamily: "var(--font-orbitron)" }}>Trader Fondeado</p>
-                                            <p className="text-xs text-text-muted flex items-center gap-1">Certificado Oficial</p>
+                                        <div className="min-w-0">
+                                            <p className="text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-purple-500 uppercase truncate" style={{ fontFamily: "var(--font-orbitron)" }}>Trader Fondeado</p>
+                                            <p className="text-[10px] sm:text-xs text-text-muted flex items-center gap-1 truncate">Certificado Oficial</p>
                                         </div>
                                     </div>
                                     <button className="p-2 bg-white/5 rounded-md text-text-muted group-hover:bg-purple-500/20 group-hover:text-purple-400 transition-all">
@@ -439,35 +512,35 @@ export default function ProfilePage() {
                                     </button>
                                 </a>
                             )}
-                            
+
                             {/* Certificate Payouts (Stackable) */}
                             {approvedWithdrawals.map((withdrawal, idx) => {
-                                const payload = { 
-                                    n: displayName, 
-                                    d: new Date(withdrawal.processed_at || withdrawal.created_at).toISOString().split('T')[0], 
-                                    a: withdrawal.user_amount || withdrawal.amount || withdrawal.amount_usdt 
+                                const payload = {
+                                    n: displayName,
+                                    d: new Date(withdrawal.processed_at || withdrawal.created_at).toISOString().split('T')[0],
+                                    a: withdrawal.user_amount || withdrawal.amount || withdrawal.amount_usdt
                                 };
                                 return (
-                                <a 
-                                    key={withdrawal.id || idx}
-                                    href={`/certificate/payout?data=${btoa(JSON.stringify(payload))}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5 hover:border-neon-green/30 hover:bg-white/5 transition-all group shadow-[0_0_15px_rgba(57,255,20,0.02)]"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded bg-neon-green/10 flex items-center justify-center border border-neon-green/20 group-hover:bg-neon-green/20 transition-colors">
-                                            <WalletCards className="w-5 h-5 text-neon-green" />
+                                    <a
+                                        key={withdrawal.id || idx}
+                                        href={`/certificate/payout?data=${btoa(JSON.stringify(payload))}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5 hover:border-neon-green/30 hover:bg-white/5 transition-all group shadow-[0_0_15px_rgba(57,255,20,0.02)]"
+                                    >
+                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-neon-green/10 flex items-center justify-center border border-neon-green/20 group-hover:bg-neon-green/20 transition-colors shrink-0">
+                                                <WalletCards className="w-4 h-4 sm:w-5 sm:h-5 text-neon-green" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs sm:text-sm font-bold text-white uppercase truncate" style={{ fontFamily: "var(--font-orbitron)" }}>Retiro #{idx + 1}</p>
+                                                <p className="text-[10px] sm:text-xs text-text-muted flex items-center gap-1 truncate">Certificado • ${payload.a}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-white uppercase" style={{ fontFamily: "var(--font-orbitron)" }}>Retiro Exitoso #{idx + 1}</p>
-                                            <p className="text-xs text-text-muted flex items-center gap-1">Certificado Oficial • ${payload.a}</p>
-                                        </div>
-                                    </div>
-                                    <button className="p-2 bg-white/5 rounded-md text-text-muted group-hover:bg-neon-green/20 group-hover:text-neon-green transition-all">
-                                        <Download className="w-4 h-4" />
-                                    </button>
-                                </a>
+                                        <button className="p-2 bg-white/5 rounded-md text-text-muted group-hover:bg-neon-green/20 group-hover:text-neon-green transition-all">
+                                            <Download className="w-4 h-4" />
+                                        </button>
+                                    </a>
                                 );
                             })}
 

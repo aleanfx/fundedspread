@@ -277,6 +277,28 @@ Servidor en **http://localhost:3000**
 - Referencias desactualizadas al precio base ($49 → $35) en Hero y tarjeta 3D.
 
 ### 🔜 Próximos Pasos:
+- Lanzamiento público y pruebas reales con traders manuales.
+- Refinamiento de notificaciones de liquidación automatizadas en el bot.
+
+---
+
+## 📅 2026-04-04 — Fase M: Flujo de Aprobación Manual & Despliegue VPS
+
+### ✅ Aprobación Manual de Cuentas (Admin Panel)
+- Creamos un flujo manual ágil para clientes que pagan fuera de plataforma (transferencia bancaria, local, crypto directo).
+- **Backend (`/api/admin/transactions/route.ts`)**: Creada la action `manual_create_account` que inserta transaccionalmente un registro simulado en `challenge_transactions` y el enlace correspondiente en `mt5_accounts`.
+- **Frontend (`admin/page.tsx`)**: Implementado un modal "Agregar Cuenta" en el panel de usuarios que permite al CEO/Administrador enlazar las credenciales de la cuenta de evaluación y su plan/balance de forma manual.
+
+### ✅ Debug de Monitoreo ("Impersonate")
+- Se ratificó y testeó que la cookie encriptada de simulación (`impersonate=true`) renderice exitosamente en `/dashboard` la data de la base de datos para la cuenta recién insertada manualmente, permitiendo monitorear qué está viendo el cliente.
+
+### ✅ Despliegue de MT5 en AWS EC2 (Headless)
+- Desplegado y evaluado el primer nodo `MT5-Node-1` en AWS (Ubuntu t2.micro) usando *Wine* y *Xvfb*.
+- Probado el workflow de compresión local en el Escritorio (Windows) de las instancias portátiles de MetaTrader 5 y su transferencia remota mediante el uso de `scp` u otras formas directas de nube.
+- Ejecución en bloque validada con el demonio invisible de pantalla número 100 (`xvfb-run -a -n 100...`).
+- Actualizada la `GUIA_VPS_AWS.md` creando la **Fase 6**, que expone en modo "receta" el paso a paso exacto para activar nuevos clientes manuales en 5 minutos.
+
+### 🔜 Próximos Pasos:
 - Pruebas E2E de pago completo en producción (www.funded-spread.com).
-- Verificar persistencia de add-ons en la base de datos tras pago exitoso.
-- Crear sección FAQ real si se necesita en el futuro.
+- Verificar que las lecturas en tiempo real del Webhook logren cruzar efectivamente desde la IP del VPS en AWS hacia el servidor de producción backend en Vercel el día lunes.
+- Monitorear consumo de RAM real en EC2 para preparar plan de escalamiento horizontal (¿cuántos contenedores MT5 aguantan los 1GB?).
