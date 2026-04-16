@@ -1219,7 +1219,7 @@ function RulesModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             {/* Body */}
             <div className="px-6 py-5 space-y-3">
               {/* 1. TRADING RULES */}
-              <RulesAccordionItem title="Reglas de Trading" iconColor="#39ff14" defaultOpen={true}>
+              <RulesAccordionItem title="Reglas de Trading" iconColor="#39ff14">
                 <RulePill label="⚠ Máximo 5 posiciones abiertas simultáneamente — Previene sobreexposición al mercado." severity="warning" />
                 <RulePill label="⚠ Máximo 20 operaciones por día — Previene overtrading y estrategias de alto riesgo." severity="warning" />
                 <RulePill label="✅ Uso de Expert Advisors (Bots) permitido — Siempre que respeten las reglas de trading (no martingale, no grid agresivo)." severity="info" />
