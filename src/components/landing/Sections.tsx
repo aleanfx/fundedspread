@@ -1103,25 +1103,253 @@ export function SupportFloatingButton() {
 /* ============================================
    FOOTER
    ============================================ */
+/* ============================================
+   RULES MODAL — Accordion Item
+   ============================================ */
+function RulesAccordionItem({
+  title, iconColor, children, defaultOpen = false
+}: {
+  title: string; iconColor: string; children: React.ReactNode; defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.02]">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02] transition-colors"
+      >
+        <h4 className="text-xs sm:text-sm font-bold text-text-primary uppercase tracking-wide"
+          style={{ fontFamily: "var(--font-orbitron)" }}>
+          <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ backgroundColor: iconColor }} />
+          {title}
+        </h4>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronRight className="w-4 h-4 text-text-muted rotate-90" />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ height: { type: "spring", stiffness: 400, damping: 40 }, opacity: { duration: 0.15 } }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-0 space-y-3 text-xs text-text-secondary leading-relaxed">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ============================================
+   RULES MODAL — Rule Pill
+   ============================================ */
+function RulePill({ label, severity = "info" }: { label: string; severity?: "info" | "warning" | "critical" }) {
+  const c = severity === "critical"
+    ? "bg-red-500/5 border-red-500/20 text-red-200/80"
+    : severity === "warning"
+    ? "bg-yellow-500/5 border-yellow-500/20 text-yellow-200/80"
+    : "bg-neon-green/5 border-neon-green/20 text-emerald-200/80";
+  return (
+    <div className={`p-3 rounded-lg border ${c} text-xs leading-relaxed`}>
+      {label}
+    </div>
+  );
+}
+
+/* ============================================
+   RULES MODAL COMPONENT
+   ============================================ */
+function RulesModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.3, type: "spring", stiffness: 400, damping: 30 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-2xl border border-white/[0.08] bg-bg-primary/95 backdrop-blur-xl shadow-2xl shadow-black/50"
+          >
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-xl border-b border-white/[0.06] px-6 py-5 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className="w-4 h-4 text-neon-green" />
+                  <span className="text-[9px] font-bold text-neon-green uppercase tracking-widest"
+                    style={{ fontFamily: "var(--font-rajdhani)" }}>Funded Spread</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight"
+                  style={{ fontFamily: "var(--font-orbitron)" }}>
+                  REGLAS DEL <span className="text-neon-green">CHALLENGE</span>
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.1] hover:border-white/[0.15] transition-all"
+              >
+                <X className="w-4 h-4 text-text-muted" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-3">
+              {/* 1. TRADING RULES */}
+              <RulesAccordionItem title="Reglas de Trading" iconColor="#39ff14" defaultOpen={true}>
+                <RulePill label="⚠ Máximo 5 posiciones abiertas simultáneamente — Previene sobreexposición al mercado." severity="warning" />
+                <RulePill label="⚠ Máximo 20 operaciones por día — Previene overtrading y estrategias de alto riesgo." severity="warning" />
+                <RulePill label="✅ Uso de Expert Advisors (Bots) permitido — Siempre que respeten las reglas de trading (no martingale, no grid agresivo)." severity="info" />
+                <RulePill label="🔴 Drawdown Diario — 2 Fases: 4% | 1 Fase: 3%. Si tu equity cae a este nivel, todas las posiciones se cierran automáticamente." severity="critical" />
+                <RulePill label="🔴 Drawdown Máximo — 2 Fases: 10% | 1 Fase: 5%. Si se alcanza, la cuenta se suspende permanentemente." severity="critical" />
+                <RulePill label="✅ Días Mínimos — 2 Fases: 5 días | 1 Fase: 2 días. Un día de trading cuenta si abres al menos una operación con ±0.3% de variación." severity="info" />
+              </RulesAccordionItem>
+
+              {/* 2. OBJECTIVES */}
+              <RulesAccordionItem title="Objetivos del Challenge" iconColor="#00c3ff">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left py-2 px-2 text-text-muted uppercase tracking-wider text-[9px] font-bold">Métrica</th>
+                        <th className="text-center py-2 px-2 text-yellow-400 uppercase tracking-wider text-[9px] font-bold">1 Fase</th>
+                        <th className="text-center py-2 px-2 text-neon-green uppercase tracking-wider text-[9px] font-bold">2F — Fase 1</th>
+                        <th className="text-center py-2 px-2 text-cyan-400 uppercase tracking-wider text-[9px] font-bold">2F — Fase 2</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-text-secondary">
+                      {[
+                        ["Objetivo de Profit", "10%", "8%", "5%"],
+                        ["Drawdown Diario", "3%", "4%", "4%"],
+                        ["Drawdown Máximo", "5%", "10%", "10%"],
+                        ["Días Mínimos", "2", "5", "5"],
+                        ["Tiempo Límite", "30 días", "30 días", "60 días"],
+                        ["Profit Split", "80%", "—", "80%"],
+                      ].map(([label, e, p1, p2], i) => (
+                        <tr key={i} className="border-b border-white/5">
+                          <td className="py-2 px-2 font-medium text-text-primary">{label}</td>
+                          <td className="py-2 px-2 text-center font-mono">{e}</td>
+                          <td className="py-2 px-2 text-center font-mono">{p1}</td>
+                          <td className="py-2 px-2 text-center font-mono">{p2}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 text-xs text-cyan-200/70">
+                  <strong>1 Fase:</strong> Apruebas → Cuenta fondeada directamente.<br />
+                  <strong>2 Fases:</strong> Fase 1 → Nueva cuenta Fase 2 → Cuenta fondeada.
+                </div>
+              </RulesAccordionItem>
+
+              {/* 3. WITHDRAWALS */}
+              <RulesAccordionItem title="Sistema de Retiros" iconColor="#a855f7">
+                <RulePill label="📅 Primer retiro: 14 días después de recibir la cuenta fondeada. Siguientes retiros cada 14 días (o 7 días con add-on Payouts Semanales)." severity="info" />
+                <RulePill label="💰 Profit Split base: 80%. Escalable a 90% (+15% precio) o 100% (+30% precio) con add-ons. Escalamiento orgánico: +5% cada 3 retiros consecutivos hasta 90%." severity="info" />
+                <RulePill label="🔗 Retiros en USDT vía redes TRC20 y BEP20. Procesamiento en 24-48 horas tras aprobación." severity="info" />
+              </RulesAccordionItem>
+
+              {/* 4. CONDUCT */}
+              <RulesAccordionItem title="Conducta y Fair Play" iconColor="#f59e0b">
+                <RulePill label="🚫 Prohibido: Martingale puro, grid agresivo, arbitraje de latencia, spike trading, copy trading entre cuentas de Funded Spread." severity="critical" />
+                <RulePill label="⚠ Una persona, una cuenta activa por tipo de challenge. No se permite cubrir riesgo entre múltiples cuentas fondeadas." severity="warning" />
+                <RulePill label="⚠ Operativa responsable: Patrones de apuestas, acumulación sin gestión de riesgo o overtrading pueden resultar en revisión o suspensión." severity="warning" />
+              </RulesAccordionItem>
+
+              {/* 5. VIOLATIONS */}
+              <RulesAccordionItem title="Consecuencias de Violación" iconColor="#ef4444">
+                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 space-y-1.5">
+                  <p className="font-bold text-red-400 text-[11px] uppercase tracking-wider mb-2">Acción Inmediata:</p>
+                  <p className="text-red-200/60 text-[11px]">1. Cierre automático de todas las posiciones abiertas.</p>
+                  <p className="text-red-200/60 text-[11px]">2. Suspensión inmediata de la cuenta (status: Failed).</p>
+                  <p className="text-red-200/60 text-[11px]">3. Desactivación del Expert Advisor de monitoreo.</p>
+                  <p className="text-red-200/60 text-[11px]">4. Registro de la violación en el dashboard.</p>
+                </div>
+                <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                  <p className="text-yellow-200/70 text-[11px]">
+                    <strong>¿Puedo volver a intentarlo?</strong> Sí. La suspensión aplica solo a la cuenta afectada. Puedes comprar un nuevo challenge sin bloqueo permanente.
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-neon-green/5 border border-neon-green/20">
+                  <p className="text-emerald-200/70 text-[11px]">
+                    <strong>¿Dudas?</strong> Contáctanos en <a href="mailto:fundedspread@gmail.com" className="text-neon-green hover:underline font-bold">fundedspread@gmail.com</a>. Revisamos cada caso individualmente.
+                  </p>
+                </div>
+              </RulesAccordionItem>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-bg-primary/95 backdrop-blur-xl border-t border-white/[0.06] px-6 py-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <p className="text-text-muted text-[10px] text-center">
+                Al adquirir un challenge, confirmas que has leído y aceptado estas reglas.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
 export function Footer() {
   const { t } = useLanguage();
+  const [rulesOpen, setRulesOpen] = useState(false);
+
   return (
-    <footer className="py-8 px-6 border-t border-border-subtle/30">
-      <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <FundedSpreadLogo className="w-5 h-5 text-neon-green drop-shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-          <span className="text-base font-bold tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>FUNDED SPREAD</span>
+    <>
+      <footer className="py-8 px-6 border-t border-border-subtle/30">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          {/* Logo — left on desktop, centered on mobile */}
+          <div className="flex items-center gap-2 justify-center md:justify-start">
+            <FundedSpreadLogo className="w-5 h-5 text-neon-green drop-shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
+            <span className="text-base font-bold tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>FUNDED SPREAD</span>
+          </div>
+          {/* Links — always centered */}
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-[10px] text-text-muted uppercase tracking-wider">
+            <button onClick={() => setRulesOpen(true)} className="hover:text-neon-green transition-colors cursor-pointer">
+              {t("footer.rules")}
+            </button>
+            <span className="text-white/10">|</span>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-neon-green transition-colors">
+              {t("footer.termsAndConditions")}
+            </a>
+          </div>
+          {/* Copyright — right on desktop, centered on mobile */}
+          <p className="text-text-muted text-[10px] uppercase tracking-wider text-center md:text-right">
+            © {new Date().getFullYear()} Funded Spread. Todos los derechos reservados.
+          </p>
         </div>
-        <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-[10px] text-text-muted uppercase tracking-wider">
-          <a href="/rules" className="hover:text-neon-green transition-colors">{t("footer.rules")}</a>
-          <span className="text-white/10">|</span>
-          <a href="/terms" className="hover:text-neon-green transition-colors">{t("footer.termsAndConditions")}</a>
-        </div>
-        <p className="text-text-muted text-[10px] uppercase tracking-wider text-center md:text-left">
-          © {new Date().getFullYear()} Funded Spread. Todos los derechos reservados.
-        </p>
-      </div>
-    </footer>
+      </footer>
+
+      {/* Rules Modal */}
+      <RulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />
+    </>
   );
 }
 
