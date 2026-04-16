@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 
 // Routes that should render WITHOUT the sidebar
-const NO_SIDEBAR_ROUTES = ["/", "/login", "/register"];
+const NO_SIDEBAR_ROUTES = ["/", "/login", "/register", "/terms", "/rules"];
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
