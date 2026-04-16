@@ -27,7 +27,8 @@ Cuenta Fondeada → Trading real → Retiros de beneficios
 
 ## 2. Tipos de Challenge
 
-### Express 1-Phase (1 Fase)
+### 1 Fase
+> *(key interna BD: `express_1phase`)*
 | Parámetro | Valor |
 |---|---|
 | Profit Target | 10% |
@@ -36,7 +37,8 @@ Cuenta Fondeada → Trading real → Retiros de beneficios
 | Mínimo de días operando | 2 |
 | Profit Split al ser fondeado | 80% (upgradeable) |
 
-### Classic 2-Phase (2 Fases)
+### 2 Fases
+> *(key interna BD: `classic_2phase`)*
 | Parámetro | Fase 1 | Fase 2 |
 |---|---|---|
 | Profit Target | 8% | 5% |
@@ -47,7 +49,7 @@ Cuenta Fondeada → Trading real → Retiros de beneficios
 
 ### Tiers Disponibles (Tamaños de Cuenta)
 
-| Tier | Cuenta | Precio Classic | Precio Express |
+| Tier | Cuenta | Precio 2 Fases | Precio 1 Fase |
 |---|---|---|---|
 | MICRO | $5,000 | $35 | $57 |
 | STARTER | $10,000 | $56 | $98 |
@@ -211,9 +213,9 @@ Los fake traders deben regenerarse cada mes con un nuevo `generation_month`. Los
 
 | Campo | Descripción |
 |---|---|
-| `account_status` | `pending_link`, `active`, `funded`, `failed` |
-| `challenge_type` | `express_1phase`, `classic_2phase` |
-| `challenge_phase` | 1 o 2 (para classic) |
+| `account_status` | `pending_link`, `active`, `under_review`, `funded`, `failed` |
+| `challenge_type` | `express_1phase` (1 Fase), `classic_2phase` (2 Fases) |
+| `challenge_phase` | 1 o 2 (para 2 Fases) |
 | `challenge_tier` | `micro`, `starter`, `pro`, `elite`, `legend`, `apex` |
 | `initial_balance` | Balance inicial de la evaluación |
 | `current_balance` / `current_equity` | Valores actuales |

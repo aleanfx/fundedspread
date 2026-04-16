@@ -6,7 +6,7 @@ import {
   Zap, Target, TrendingUp, Shield, ChevronLeft, ChevronRight, Star, Bitcoin,
   Trophy, ArrowRight, CheckCircle2, DollarSign, BarChart3, Eye,
   Lock, Crosshair, Flame, Swords, Play, LayoutDashboard, Globe, Check,
-  WalletCards, LineChart, Gem
+  WalletCards, LineChart, Gem, X
 } from "lucide-react";
 import { FundedSpreadLogo } from "@/components/FundedSpreadLogo";
 import { AnimatedCounter, FloatingParticles, EquityChart3D, SocialProofTicker } from "./InteractiveElements";
@@ -1002,6 +1002,105 @@ export function FinalCTA({ onOpenAuth, user }: { onOpenAuth: (tab: "login" | "re
 }
 
 /* ============================================
+   FLOATING SUPPORT BUTTON
+   ============================================ */
+export function SupportFloatingButton() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
+
+  return (
+    <>
+      {/* Backdrop */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[998] bg-black/20 backdrop-blur-[2px]"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Support Modal */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="fixed bottom-24 right-6 z-[999] w-[320px] bg-[#111111] border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-neon-green/5 border-b border-neon-green/10 p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-neon-green/10 border border-neon-green/30 flex items-center justify-center">
+                <Gem className="w-5 h-5 text-neon-green" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-neon-green" style={{ fontFamily: "var(--font-orbitron)" }}>
+                  {t("support.title")}
+                </h3>
+                <p className="text-[10px] text-text-muted uppercase tracking-wider">Funded Spread</p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-3">
+              <p className="text-sm text-text-secondary leading-relaxed" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                {t("support.description")}
+              </p>
+
+              <a
+                href="mailto:fundedspread@gmail.com"
+                className="flex items-center gap-3 p-3 rounded-xl bg-neon-green/5 border border-neon-green/20 hover:bg-neon-green/10 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-neon-green/10 flex items-center justify-center group-hover:bg-neon-green/20 transition-colors">
+                  <Globe className="w-4 h-4 text-neon-green" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-neon-green" style={{ fontFamily: "var(--font-orbitron)" }}>
+                    fundedspread@gmail.com
+                  </p>
+                  <p className="text-[10px] text-text-muted">{t("support.clickToSend")}</p>
+                </div>
+              </a>
+
+              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+                <div className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
+                <p>{t("support.responseTime")}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Button */}
+      <motion.button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-[999] w-14 h-14 rounded-full bg-neon-green text-black flex items-center justify-center shadow-lg shadow-neon-green/30 hover:shadow-neon-green/50 transition-shadow"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        aria-label="Contact support"
+      >
+        <AnimatePresence mode="wait">
+          {isOpen ? (
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
+              <X className="w-6 h-6" />
+            </motion.div>
+          ) : (
+            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
+              <Globe className="w-6 h-6" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </>
+  );
+}
+
+/* ============================================
    FOOTER
    ============================================ */
 export function Footer() {
@@ -1014,10 +1113,10 @@ export function Footer() {
           <span className="text-base font-bold tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>FUNDED SPREAD</span>
         </div>
         <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-[10px] text-text-muted uppercase tracking-wider">
-          <a href="#" className="hover:text-text-primary transition-colors">{t("footer.terms")}</a>
-          <a href="#" className="hover:text-text-primary transition-colors">{t("footer.privacy")}</a>
-          <a href="#" className="hover:text-text-primary transition-colors">{t("footer.support")}</a>
-          <a href="#" className="hover:text-text-primary transition-colors">{t("footer.contact")}</a>
+          <a href="/rules" className="hover:text-neon-green transition-colors">{t("footer.terms")}</a>
+          <a href="/rules#terms" className="hover:text-neon-green transition-colors">{t("footer.privacy")}</a>
+          <a href="mailto:fundedspread@gmail.com" className="hover:text-neon-green transition-colors">{t("footer.support")}</a>
+          <a href="mailto:fundedspread@gmail.com" className="hover:text-neon-green transition-colors">{t("footer.contact")}</a>
         </div>
         <p className="text-text-muted text-[10px] uppercase tracking-wider text-center md:text-left">
           © {new Date().getFullYear()} Funded Spread. Todos los derechos reservados.
@@ -1026,3 +1125,4 @@ export function Footer() {
     </footer>
   );
 }
+

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   TrendingUp,
   TrendingDown,
@@ -23,6 +24,9 @@ import {
   Fingerprint,
   Layers,
   BadgeDollarSign,
+  Search,
+  FileText,
+  Mail,
 } from "lucide-react";
 
 import { useEffect, useState, useMemo } from "react";
@@ -271,8 +275,8 @@ function AccountCredentials({ account, challengeMetadata, isImpersonating }: { a
   const leverageDisplay = account.ctrader_leverage ? `1:${account.ctrader_leverage}` : '1:100';
 
   const typeLabel =
-    challengeMetadata.type === 'express_1phase' ? 'Express X' :
-      challengeMetadata.type === 'classic_2phase' ? 'Classic Pro' :
+    challengeMetadata.type === 'express_1phase' ? '1 Fase' :
+      challengeMetadata.type === 'classic_2phase' ? '2 Fases' :
         challengeMetadata.type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
 
   const phaseLabel =
@@ -636,7 +640,10 @@ export default function DashboardPage() {
       return;
     }
 
-    if (acc.account_status === 'failed' || acc.is_active === false) {
+    if (acc.account_status === 'under_review') {
+      setChallengeState('active');
+      setAlertMessage(acc.status_reason || 'Tu cuenta está siendo revisada por nuestro equipo.');
+    } else if (acc.account_status === 'failed' || acc.is_active === false) {
       setChallengeState('failed');
       setViolation(acc.status_reason || acc.violation_type || "Cuenta terminada.");
     } else {
@@ -908,7 +915,7 @@ export default function DashboardPage() {
                   {accounts.map(acc => {
                     const typeLabel =
                       acc.challenge_type === 'classic_2phase' ? '2 Fases' :
-                        acc.challenge_type === 'express_1phase' ? 'Express X' :
+                        acc.challenge_type === 'express_1phase' ? '1 Fase' :
                           acc.challenge_type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
 
                     const statusLabel =
@@ -926,8 +933,8 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-                    {challengeMetadata?.type === 'express_1phase' ? 'Express X' :
-                      challengeMetadata?.type === 'classic_2phase' ? 'Classic Pro' :
+                    {challengeMetadata?.type === 'express_1phase' ? '1 Fase' :
+                      challengeMetadata?.type === 'classic_2phase' ? '2 Fases' :
                         challengeMetadata?.type === 'titan_3phase' ? 'Titan Max' : 'Challenge'}
                   </span>
                   <span className="text-xs text-neon-green px-2 py-0.5 bg-neon-green/10 rounded border border-neon-green/20" style={{ fontFamily: "var(--font-orbitron)" }}>
@@ -951,21 +958,35 @@ export default function DashboardPage() {
 
           {/* Violation Alert */}
           {(violation || alertMessage) && (
-            <motion.div variants={itemVariants} className={`mb-8 ${violation ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30'} p-4 rounded-lg flex items-center gap-3`} style={{ animation: violation ? "pulse 2s infinite" : "none" }}>
-              <ShieldAlert className={`w-6 h-6 flex-shrink-0 ${violation ? 'text-red-500' : 'text-yellow-500'}`} />
-              <div>
-                <h3 className={`font-bold ${violation ? 'text-red-500' : 'text-yellow-500'}`} style={{ fontFamily: "var(--font-orbitron)" }}>
-                  {violation ? t("dashboard.alerts.suspended") : t("dashboard.alerts.attention")}
-                </h3>
-                <p className={`text-sm ${violation ? 'text-red-200' : 'text-yellow-200'}`}>
-                  {violation ? (
-                    violation.includes('daily_drawdown')
-                      ? t("dashboard.alerts.ddExceeded")
-                      : violation.includes('TERMINATED')
-                        ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
-                        : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
-                  ) : alertMessage}
-                </p>
+            <motion.div variants={itemVariants} className={`mb-8 ${violation ? 'bg-red-500/10 border border-red-500/30' : 'bg-amber-500/10 border border-amber-500/30'} p-5 rounded-xl`} style={{ animation: violation ? "pulse 2s infinite" : "none" }}>
+              <div className="flex items-start gap-3">
+                {violation ? (
+                  <ShieldAlert className="w-6 h-6 flex-shrink-0 text-red-500 mt-0.5" />
+                ) : (
+                  <Search className="w-6 h-6 flex-shrink-0 text-amber-400 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <h3 className={`font-bold text-sm mb-1 ${violation ? 'text-red-400' : 'text-amber-400'}`} style={{ fontFamily: "var(--font-orbitron)" }}>
+                    {violation ? t("dashboard.alerts.suspended") : t("dashboard.alerts.underReview")}
+                  </h3>
+                  <p className={`text-sm leading-relaxed ${violation ? 'text-red-200/80' : 'text-amber-200/80'}`}>
+                    {violation ? (
+                      violation.includes('daily_drawdown')
+                        ? t("dashboard.alerts.ddExceeded")
+                        : violation.includes('TERMINATED')
+                          ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
+                          : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
+                    ) : alertMessage}
+                  </p>
+                  <div className="flex items-center gap-3 mt-3">
+                    <Link href="/rules" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
+                      <FileText className="w-3.5 h-3.5" /> {t("dashboard.alerts.viewRules")}
+                    </Link>
+                    <a href="mailto:fundedspread@gmail.com" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
+                      <Mail className="w-3.5 h-3.5" /> {t("dashboard.alerts.contactSupport")}
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -1166,23 +1187,42 @@ export default function DashboardPage() {
           </div>
 
           {/* Trading Objectives */}
-          <TradingObjectives
-            dailyDrawdownPct={accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4.0}
-            maxDrawdownPct={accounts.find(a => a.id === selectedAccountId)?.max_drawdown_pct || 10.0}
-            currentDailyDD={0}
-            currentMaxDD={0}
-            currentDailyLoss={0}
-            maxDailyLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4) / 100)}
-            currentMaxLoss={0}
-            maxLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.max_drawdown_pct || 10) / 100)}
-            tradingDaysCount={accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
-            minTradingDays={accounts.find(a => a.id === selectedAccountId)?.challenge_type === 'express_1phase' ? 2 : 5}
-            profitTargetPct={challengeMetadata.profitTargetPct}
-            currentProfitPct={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0) / challengeMetadata.initialBalance * 100}
-            currentProfit={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0)}
-            profitTarget={challengeMetadata.initialBalance * (challengeMetadata.profitTargetPct / 100)}
-            isFunded={accounts.find(a => a.id === selectedAccountId)?.account_status === 'funded'}
-          />
+          {(() => {
+            const acc = accounts.find(a => a.id === selectedAccountId);
+            const initial = Number(acc?.initial_balance) || 10000;
+            const balance = Number(acc?.current_balance) || initial;
+            const equity = Number(acc?.current_equity) || balance;
+            const dailyInit = Number(acc?.daily_initial_balance) || initial;
+            const ddPct = Number(acc?.daily_drawdown_pct) || 4;
+            const maxDDPct = Number(acc?.max_drawdown_pct) || 10;
+            
+            const currentProfit = balance - initial;
+            const currentProfitPct = (currentProfit / initial) * 100;
+            const dailyLoss = Math.max(0, dailyInit - equity);
+            const dailyDDCurrent = (dailyLoss / dailyInit) * 100;
+            const maxLoss = Math.max(0, initial - equity);
+            const maxDDCurrent = maxLoss > 0 ? (maxLoss / initial) * 100 : 0;
+
+            return (
+              <TradingObjectives
+                dailyDrawdownPct={ddPct}
+                maxDrawdownPct={maxDDPct}
+                currentDailyDD={Number(dailyDDCurrent.toFixed(2))}
+                currentMaxDD={Number(maxDDCurrent.toFixed(2))}
+                currentDailyLoss={dailyLoss}
+                maxDailyLossLimit={dailyInit * (ddPct / 100)}
+                currentMaxLoss={maxLoss}
+                maxLossLimit={initial * (maxDDPct / 100)}
+                tradingDaysCount={acc?.trading_days_count || 0}
+                minTradingDays={acc?.challenge_type === 'express_1phase' ? 2 : 5}
+                profitTargetPct={challengeMetadata.profitTargetPct}
+                currentProfitPct={Number(currentProfitPct.toFixed(2))}
+                currentProfit={currentProfit}
+                profitTarget={initial * (challengeMetadata.profitTargetPct / 100)}
+                isFunded={acc?.account_status === 'funded'}
+              />
+            );
+          })()}
 
           {/* P&L Performance Chart */}
           <div className="mb-6">

@@ -21,7 +21,8 @@
     "dashboard": "GO TO DASHBOARD",
     "login": "Login",
     "register": "GET FUNDED NOW",
-    "enter": "Log In"
+    "enter": "Log In",
+    "rules": "Rules"
   },
   "sidebar": {
     "system": "System"
@@ -31,6 +32,12 @@
     "privacy": "Privacy",
     "support": "Support",
     "contact": "Contact"
+  },
+  "support": {
+    "title": "Support",
+    "description": "Have a question, issue, or suggestion? Send us an email and we'll get back to you as soon as possible.",
+    "clickToSend": "Click to send email",
+    "responseTime": "We respond within 12 hours. If it takes a bit longer, it's due to the volume of messages — we respond in order of receipt."
   },
   "interactive": {
     "portfolioValue": "Portfolio Value",
@@ -157,9 +164,9 @@
     "description": "Select your challenge type and account size. Pay with crypto and start your journey.",
     "recommended": "RECOMMENDED",
     "types": {
-      "express": "Express 1 Phase",
+      "express": "1 Phase",
       "expressDesc": "10% Target → Funded Account",
-      "classic": "Classic 2 Phases",
+      "classic": "2 Phases",
       "classicDesc": "Phase 1 (+8%) → Phase 2 (+5%) → Funded Account"
     },
     "features": {
@@ -309,22 +316,25 @@
     "alerts": {
       "suspended": "⚠ ACCOUNT SUSPENDED",
       "attention": "⚠ ATTENTION REQUIRED",
+      "underReview": "🔍 ACCOUNT UNDER REVIEW",
       "ddExceeded": "Your account has been suspended because the 5% Daily Drawdown limit was exceeded. Contact support to review your account.",
       "ddExceededShort": "Daily Drawdown exceeded 5%",
-      "suspendedReason": "Your trading account has been suspended:"
+      "suspendedReason": "Your trading account has been suspended:",
+      "viewRules": "View Rules",
+      "contactSupport": "Support"
     },
     "welcomeBack": "Welcome back,",
     "levelUp": {
       "congrats": "Congratulations! You have reached the profit target of",
-      "express": "Current phase: Express Evaluation (10%)",
+      "express": "Current phase: 1-Phase Evaluation (10%)",
       "phase1": "Current phase: Evaluation 1 (8%)",
       "phase2": "Current phase: Evaluation 2 (5%)",
       "checkpoint1": "Current level: Checkpoint",
       "checkpoint2": "(+20% to scale)"
     },
     "badges": {
-      "express": "EXPRESS CHALLENGE — 1 PHASE",
-      "classic": "CLASSIC CHALLENGE — PHASE",
+      "express": "CHALLENGE — 1 PHASE",
+      "classic": "CHALLENGE — 2 PHASES — PHASE",
       "split": "SPLIT",
       "scaling": "+ X2 SCALING"
     },
@@ -409,11 +419,11 @@
     "subtitle": "Select your challenge type and account size. Pay with crypto and start your journey.",
     "types": {
       "express": {
-        "label": "Express 1 Phase",
+        "label": "1 Phase",
         "desc": "Target 10% → Funded Account"
       },
       "classic": {
-        "label": "Classic 2 Phases",
+        "label": "2 Phases",
         "desc": "Phase 1 (+8%) → Phase 2 (+5%) → Funded Account"
       }
     },

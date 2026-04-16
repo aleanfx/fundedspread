@@ -15,6 +15,7 @@ import {
   LevelUpSection,
   FinalCTA,
   Footer,
+  SupportFloatingButton,
 } from "@/components/landing/Sections";
 
 export default function LandingPage() {
@@ -57,6 +58,7 @@ export default function LandingPage() {
       <LevelUpSection />
       <FinalCTA onOpenAuth={openAuth} user={user} />
       <Footer />
+      <SupportFloatingButton />
     </div>
   );
 }

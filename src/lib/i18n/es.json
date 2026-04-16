@@ -21,7 +21,8 @@
     "dashboard": "IR AL PANEL",
     "login": "Iniciar Sesión",
     "register": "FONDEARME AHORA",
-    "enter": "Acceder"
+    "enter": "Acceder",
+    "rules": "Reglas"
   },
   "sidebar": {
     "system": "Sistema"
@@ -31,6 +32,12 @@
     "privacy": "Privacidad",
     "support": "Soporte",
     "contact": "Contacto"
+  },
+  "support": {
+    "title": "Soporte",
+    "description": "¿Tienes una pregunta, problema o sugerencia? Escríbenos un correo y te responderemos lo antes posible.",
+    "clickToSend": "Clic para enviar correo",
+    "responseTime": "Respondemos en menos de 12 horas. Si nos tardamos un poco más, es por la cantidad de mensajes recibidos — respondemos en orden de llegada."
   },
   "interactive": {
     "portfolioValue": "Valor del Portafolio",
@@ -309,14 +316,17 @@
     "alerts": {
       "suspended": "⚠ CUENTA SUSPENDIDA",
       "attention": "⚠ ATENCIÓN REQUERIDA",
+      "underReview": "🔍 CUENTA EN REVISIÓN",
       "ddExceeded": "Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Diario del 5%. Contacta soporte para revisar tu cuenta.",
       "ddExceededShort": "Drawdown Diario excedió 5%",
-      "suspendedReason": "Tu cuenta de trading ha sido suspendida:"
+      "suspendedReason": "Tu cuenta de trading ha sido suspendida:",
+      "viewRules": "Ver Reglas",
+      "contactSupport": "Soporte"
     },
     "welcomeBack": "Bienvenido de nuevo,",
     "levelUp": {
       "congrats": "¡Felicidades! Has alcanzado el objetivo de",
-      "express": "Fase actual: Evaluación Express (10%)",
+      "express": "Fase actual: Evaluación 1 Fase (10%)",
       "phase1": "Fase actual: Evaluación 1 (8%)",
       "phase2": "Fase actual: Evaluación 2 (5%)",
       "checkpoint1": "Nivel actual: Checkpoint",
