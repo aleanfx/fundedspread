@@ -28,10 +28,8 @@
     "system": "Sistema"
   },
   "footer": {
-    "terms": "Términos",
-    "privacy": "Privacidad",
-    "support": "Soporte",
-    "contact": "Contacto"
+    "rules": "Reglas",
+    "termsAndConditions": "Términos y Condiciones"
   },
   "support": {
     "title": "Soporte",

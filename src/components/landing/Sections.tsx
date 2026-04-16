@@ -1113,10 +1113,9 @@ export function Footer() {
           <span className="text-base font-bold tracking-wider" style={{ fontFamily: "var(--font-rajdhani)" }}>FUNDED SPREAD</span>
         </div>
         <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-[10px] text-text-muted uppercase tracking-wider">
-          <a href="/rules" className="hover:text-neon-green transition-colors">{t("footer.terms")}</a>
-          <a href="/rules#terms" className="hover:text-neon-green transition-colors">{t("footer.privacy")}</a>
-          <a href="mailto:fundedspread@gmail.com" className="hover:text-neon-green transition-colors">{t("footer.support")}</a>
-          <a href="mailto:fundedspread@gmail.com" className="hover:text-neon-green transition-colors">{t("footer.contact")}</a>
+          <a href="/rules" className="hover:text-neon-green transition-colors">{t("footer.rules")}</a>
+          <span className="text-white/10">|</span>
+          <a href="/terms" className="hover:text-neon-green transition-colors">{t("footer.termsAndConditions")}</a>
         </div>
         <p className="text-text-muted text-[10px] uppercase tracking-wider text-center md:text-left">
           © {new Date().getFullYear()} Funded Spread. Todos los derechos reservados.
