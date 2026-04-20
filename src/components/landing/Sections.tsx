@@ -1225,7 +1225,7 @@ function RulesModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                 <RulePill label="✅ Uso de Expert Advisors (Bots) permitido — Siempre que respeten las reglas de trading (no martingale, no grid agresivo)." severity="info" />
                 <RulePill label="🔴 Drawdown Diario — 2 Fases: 4% | 1 Fase: 3%. Si tu equity cae a este nivel, todas las posiciones se cierran automáticamente." severity="critical" />
                 <RulePill label="🔴 Drawdown Máximo — 2 Fases: 10% | 1 Fase: 5%. Si se alcanza, la cuenta se suspende permanentemente." severity="critical" />
-                <RulePill label="✅ Días Mínimos — 2 Fases: 5 días | 1 Fase: 2 días. Un día de trading cuenta si abres al menos una operación con ±0.3% de variación." severity="info" />
+                <RulePill label="✅ Días Mínimos — 2 Fases: 5 días | 1 Fase: 2 días. Un día de trading cuenta si abres al menos una operación con ±0.3% de variación y debe durar abierta al menos 5 minutos como mínimo." severity="info" />
               </RulesAccordionItem>
 
               {/* 2. OBJECTIVES */}

@@ -399,7 +399,7 @@
     "errorTitle": "ERROR",
     "tryAgain": "Try Again",
     "minDaysTitle": "Minimum Trading Days",
-    "minDaysDesc": "You need at least {required} valid trading days (≥0.3% profit per trade). You have {current} days.",
+    "minDaysDesc": "You need at least {required} valid trading days (≥0.3% variation and open for ≥5 min). You have {current} days.",
     "errors": {
       "invalidAddress": "Invalid wallet address for the selected network.",
       "minAmount": "Minimum withdrawal amount is $100.",

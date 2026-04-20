@@ -399,7 +399,7 @@
     "errorTitle": "ERROR",
     "tryAgain": "Intentar de Nuevo",
     "minDaysTitle": "Días Mínimos de Operación",
-    "minDaysDesc": "Necesitas al menos {required} días operados con operaciones válidas (≥0.3% de ganancia). Llevas {current} días.",
+    "minDaysDesc": "Necesitas al menos {required} días operados con operaciones válidas (≥0.3% de variación y abiertas al menos 5 min). Llevas {current} días.",
     "errors": {
       "invalidAddress": "Dirección de wallet inválida para la red seleccionada.",
       "minAmount": "El monto mínimo de retiro es $100.",

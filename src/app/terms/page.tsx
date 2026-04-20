@@ -387,8 +387,8 @@ export default function TermsPage() {
             <p className="text-xs text-emerald-200/70">
               Para que un día de trading sea contado como válido, las operaciones ejecutadas deben cumplir
               con los requisitos mínimos de volumen y duración establecidos por el Proveedor. Operaciones
-              que no generen al menos un ±0.3% de variación sobre el balance no serán contabilizadas como
-              días de trading activos.
+              que no generen al menos un ±0.3% de variación sobre el balance y que no duren abiertas al
+              menos 5 minutos como mínimo, no serán contabilizadas como días de trading activos.
             </p>
           </div>
         </TermsSection>

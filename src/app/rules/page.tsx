@@ -248,7 +248,7 @@ export default function RulesPage() {
             <RuleItem
               icon={Timer}
               title="Días Mínimos de Trading"
-              description="Debes operar un mínimo de días antes de ser elegible para completar el challenge. 2 Fases: 5 días | 1 Fase: 2 días. Un 'día de trading' cuenta cuando abres al menos una operación."
+              description="Debes operar un mínimo de días antes de ser elegible para completar el challenge. 2 Fases: 5 días | 1 Fase: 2 días. Un 'día de trading' cuenta cuando abres al menos una operación con ±0.3% de variación y debe durar abierta al menos 5 minutos como mínimo."
               severity="info"
             />
           </div>
