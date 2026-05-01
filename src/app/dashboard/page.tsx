@@ -201,9 +201,15 @@ function RecentTrades({ trades }: { trades: Trade[] }) {
       </div>
       {trades.length === 0 ? (
         <div className="text-center py-8">
-          <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
-          <p className="text-sm text-text-muted">Las operaciones aparecerán aquí cuando el EA de MT5 envíe datos.</p>
-          <p className="text-xs text-white/20 mt-1">Conecta tu Expert Advisor para ver el historial en tiempo real.</p>
+          <div className="relative w-14 h-14 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full bg-neon-blue/5 border border-neon-blue/10" />
+            <div className="absolute inset-0 rounded-full border border-neon-blue/20 animate-ping" style={{ animationDuration: '3s' }} />
+            <Clock className="w-6 h-6 text-neon-blue/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-neon-blue/60 bg-neon-blue/5 px-3 py-1 rounded-full border border-neon-blue/10 mb-3">
+            Próximamente
+          </span>
+          <p className="text-sm text-white/25 font-medium mt-2">El historial de operaciones estará disponible muy pronto.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -491,7 +497,7 @@ export default function DashboardPage() {
       try {
         setLoading(true);
 
-        let user = null;
+        let user: any = null;
         let userData = null;
         let accountsData = null;
         let foundImpersonation = false;
@@ -565,6 +571,41 @@ export default function DashboardPage() {
           setUserId(user.id);
           setUserObj(user);
           setIsImpersonating(false);
+
+          // ─── AUTO-SYNC: Ensure user has a leaderboard entry ───
+          supabase
+            .from('leaderboard_traders')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('is_fake', false)
+            .maybeSingle()
+            .then(({ data: lbEntry }: { data: any }) => {
+              if (!lbEntry) {
+                const meta = user.user_metadata || {};
+                const displayName = meta.full_name || meta.name || user.email?.split('@')[0] || 'Trader';
+                const countryMap: Record<string, string> = {
+                  "Argentina": "ar", "México": "mx", "Colombia": "co", "Brasil": "br", "Chile": "cl",
+                  "Perú": "pe", "Ecuador": "ec", "República Dominicana": "do", "Uruguay": "uy",
+                  "Panamá": "pa", "Costa Rica": "cr", "Guatemala": "gt", "Venezuela": "ve",
+                  "Bolivia": "bo", "España": "es", "Estados Unidos": "us", "Paraguay": "py",
+                  "El Salvador": "sv", "Nicaragua": "ni", "Honduras": "hn",
+                };
+                supabase.from('leaderboard_traders').insert({
+                  username: displayName,
+                  user_id: user.id,
+                  checkpoint_level: 1,
+                  total_profit: 0,
+                  win_rate: 0,
+                  risk_reward: 0,
+                  account_size: 0,
+                  trades_count: 0,
+                  rank_title: 'novato',
+                  is_fake: false,
+                  country_code: countryMap[meta.country] || null,
+                  avatar_url: meta.avatar_url || null,
+                }).then(() => console.log('Leaderboard: Auto-created entry for', displayName));
+              }
+            });
         }
 
         if (userData && accountsData && accountsData.length > 0) {
@@ -1234,13 +1275,20 @@ export default function DashboardPage() {
                 maxDrawdownPct={challengeMetadata.type === 'express_1phase' ? 5 : stats.maxDailyDrawdown}
               />
             ) : (
-              <div className="relative bg-[#0d1424]/80 border border-white/[0.06] rounded-2xl p-8 text-center">
-                <div className="absolute -top-20 right-10 w-60 h-60 bg-emerald-500/[0.02] blur-[100px] rounded-full pointer-events-none" />
-                <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-sm text-white/30 font-medium" style={{ fontFamily: "var(--font-rajdhani)" }}>
-                  {t("dashboard.pnlEmpty") || "La curva de rendimiento aparecerá cuando comiences a operar"}
+              <div className="relative bg-[#0d1424]/80 border border-white/[0.06] rounded-2xl p-10 text-center overflow-hidden">
+                <div className="absolute -top-20 right-10 w-60 h-60 bg-neon-blue/[0.03] blur-[100px] rounded-full pointer-events-none" />
+                <div className="absolute -bottom-16 left-10 w-40 h-40 bg-neon-green/[0.02] blur-[80px] rounded-full pointer-events-none" />
+                <div className="relative w-14 h-14 mx-auto mb-4">
+                  <div className="absolute inset-0 rounded-full bg-neon-blue/5 border border-neon-blue/10" />
+                  <div className="absolute inset-0 rounded-full border border-neon-blue/20 animate-ping" style={{ animationDuration: '3s' }} />
+                  <BarChart3 className="w-6 h-6 text-neon-blue/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-neon-blue/60 bg-neon-blue/5 px-3 py-1 rounded-full border border-neon-blue/10 mb-3">
+                  Próximamente
+                </span>
+                <p className="text-sm text-white/25 font-medium mt-2" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                  Tu curva de rendimiento estará disponible muy pronto.
                 </p>
-                <p className="text-[11px] text-white/15 mt-1">Conecta tu EA de MT5 para comenzar</p>
               </div>
             )}
           </div>

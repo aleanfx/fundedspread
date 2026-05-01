@@ -94,6 +94,54 @@ export async function POST(request: Request) {
 
         console.log(`🤖 Generated ${newBots.length} new bots for ${currentMonth}`);
 
+        // ─── Step 4.5: Sync ALL registered users to leaderboard ───
+        const countryNameToISO: Record<string, string> = {
+            "Argentina": "ar", "México": "mx", "Colombia": "co", "Brasil": "br", "Chile": "cl",
+            "Perú": "pe", "Ecuador": "ec", "República Dominicana": "do", "Uruguay": "uy",
+            "Panamá": "pa", "Costa Rica": "cr", "Guatemala": "gt", "Venezuela": "ve",
+            "Bolivia": "bo", "España": "es", "Estados Unidos": "us", "Paraguay": "py",
+            "El Salvador": "sv", "Nicaragua": "ni", "Honduras": "hn",
+        };
+
+        const { data: allUsers } = await supabaseAdmin.from("users").select("id, email, full_name, username, avatar_url");
+        const { data: realLbEntries } = await supabaseAdmin.from("leaderboard_traders").select("user_id").eq("is_fake", false);
+        const existingUserIds = new Set((realLbEntries || []).map(e => e.user_id));
+
+        const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const authMap: Record<string, any> = {};
+        for (const au of (authUsers || [])) {
+            authMap[au.id] = au.user_metadata || {};
+        }
+
+        const missingUsers = (allUsers || []).filter(u => !existingUserIds.has(u.id));
+        if (missingUsers.length > 0) {
+            const newEntries = missingUsers.map(u => {
+                const meta = authMap[u.id] || {};
+                const displayName = u.full_name || meta.full_name || u.username || u.email?.split('@')[0] || 'Trader';
+                return {
+                    username: displayName.trim(),
+                    user_id: u.id,
+                    checkpoint_level: 1,
+                    total_profit: 0,
+                    win_rate: 0,
+                    risk_reward: 0,
+                    account_size: 0,
+                    trades_count: 0,
+                    rank_title: 'novato',
+                    is_fake: false,
+                    country_code: countryNameToISO[meta.country] || null,
+                    avatar_url: u.avatar_url || meta.avatar_url || null,
+                };
+            });
+
+            const { error: syncError } = await supabaseAdmin.from("leaderboard_traders").insert(newEntries);
+            if (syncError) {
+                console.error("Error syncing users:", syncError);
+            } else {
+                console.log(`👥 Synced ${newEntries.length} new users to leaderboard`);
+            }
+        }
+
         // ─── Step 5: Evaluate Historic ranks for Top 10 to preserve permanent achievements ───
         const top10WithRanks = top10.map((t, index) => {
             let historicRank = t.rank_title || "novato";

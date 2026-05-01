@@ -548,6 +548,40 @@ export default function LeaderboardPage() {
                 console.error("Leaderboard: Error fetching traders", leaderboardResponse.error);
             } else {
                 const lbData = leaderboardResponse.data || [];
+
+                // ─── SAFETY NET: Auto-reset if no bots exist for current month ───
+                const hasCurrentMonthBots = lbData.some(
+                    (t: Trader) => t.is_fake && t.generation_month === currentMonth
+                );
+
+                if (!hasCurrentMonthBots && lbData.length < 10) {
+                    console.warn("Leaderboard: No bots found for current month! Triggering auto-reset...");
+                    try {
+                        await fetch("/api/leaderboard/reset", { method: "POST" });
+                        // Reload the data after reset
+                        const { data: refreshedData } = await supabase
+                            .from("leaderboard_traders")
+                            .select("*")
+                            .or(`generation_month.eq.${currentMonth},is_fake.eq.false`)
+                            .order("total_profit", { ascending: false });
+
+                        if (refreshedData && refreshedData.length > 0) {
+                            const refreshedSorted = [...refreshedData].sort((a: Trader, b: Trader) => {
+                                const profitA = calculateDisplayProfit(a);
+                                const profitB = calculateDisplayProfit(b);
+                                if (profitB !== profitA) return profitB - profitA;
+                                if (b.total_profit !== a.total_profit) return b.total_profit - a.total_profit;
+                                return a.username.localeCompare(b.username);
+                            });
+                            setTraders(refreshedSorted);
+                            console.log("Leaderboard: Auto-reset successful,", refreshedSorted.length, "traders loaded");
+                            return; // Skip the normal sort below
+                        }
+                    } catch (resetErr) {
+                        console.error("Leaderboard: Auto-reset failed", resetErr);
+                    }
+                }
+
                 const sorted = [...lbData].sort((a: Trader, b: Trader) => {
                     const profitA = calculateDisplayProfit(a);
                     const profitB = calculateDisplayProfit(b);
