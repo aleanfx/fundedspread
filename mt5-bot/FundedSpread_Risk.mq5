@@ -7,7 +7,7 @@
 #property version   "2.10"
 
 // Inputs (Parámetros configurables desde MT5)
-input string InpWebhookUrl = "http://127.0.0.1:3000/api/risk-engine/mt5-webhook"; // URL del Webhook (Modificar en Prod)
+input string InpWebhookUrl = "https://www.funded-spread.com/api/risk-engine/mt5-webhook"; // URL del Webhook
 input string InpApiSecret = "fundedspread_ea_secret_key_2026"; // API Secret Key
 input int InpTimerSeconds = 5; // Frecuencia con posiciones abiertas (seg)
 input int InpIdleMinutes = 30; // Frecuencia sin posiciones (minutos)

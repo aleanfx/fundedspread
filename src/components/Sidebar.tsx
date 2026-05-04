@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     Home,
+    ScrollText,
 } from "lucide-react";
 import { FundedSpreadLogo } from "@/components/FundedSpreadLogo";
 import { createClient, getSafeSession, hasImpersonationCookie } from "@/lib/supabase/client";
@@ -65,6 +66,7 @@ export default function Sidebar() {
         { href: "/dashboard", label: t("navbar.panel") || "Panel", icon: LayoutDashboard },
         { href: "/checkout", label: t("navbar.challenges") || "Retos", icon: Wallet },
         { href: "/leaderboard", label: t("navbar.leaderboard") || "Clasificación", icon: Trophy },
+        { href: "/rules", label: t("navbar.rules") || "Reglas", icon: ScrollText },
     ];
 
     // Close mobile menu when pathname changes

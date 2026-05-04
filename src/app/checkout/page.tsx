@@ -17,6 +17,8 @@ import {
     Star,
     TrendingUp,
     Check,
+    Tag,
+    X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -242,6 +244,43 @@ export default function CheckoutPage() {
     const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>("");
 
+    // Coupon system
+    const [couponCode, setCouponCode] = useState("");
+    const [couponStatus, setCouponStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+    const [couponDiscount, setCouponDiscount] = useState(0);
+    const [couponLabel, setCouponLabel] = useState("");
+
+    const VALID_COUPONS: Record<string, { discount: number; label: string }> = {
+        "PERFORMANCE": { discount: 10, label: "Performance VIP" },
+        "SPREADZERO": { discount: 8, label: "Spread Zero" },
+    };
+
+    const handleApplyCoupon = () => {
+        const code = couponCode.trim().toUpperCase();
+        if (!code) return;
+        setCouponStatus("checking");
+        // Simulate a brief check delay for UX
+        setTimeout(() => {
+            const found = VALID_COUPONS[code];
+            if (found) {
+                setCouponStatus("valid");
+                setCouponDiscount(found.discount);
+                setCouponLabel(found.label);
+            } else {
+                setCouponStatus("invalid");
+                setCouponDiscount(0);
+                setCouponLabel("");
+            }
+        }, 600);
+    };
+
+    const handleRemoveCoupon = () => {
+        setCouponCode("");
+        setCouponStatus("idle");
+        setCouponDiscount(0);
+        setCouponLabel("");
+    };
+
     // Initialize state from URL params
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -405,6 +444,7 @@ export default function CheckoutPage() {
                     addonScalingX2: addons.scalingX2,
                     addonSplit90: addons.split90,
                     addonSplit100: addons.split100,
+                    couponCode: couponStatus === "valid" ? couponCode.trim().toUpperCase() : null,
                 }),
             });
 
@@ -900,15 +940,117 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-border-subtle pt-4 flex justify-between items-center px-1 mt-4">
-                                        <span className="text-text-muted font-bold text-[10px] sm:text-xs uppercase tracking-widest font-rajdhani">{t("checkout.confirm.total")}</span>
-                                        <span
-                                            className={`text-2xl sm:text-3xl font-black text-neon-green shadow-neon-green/20 drop-shadow-sm`}
-                                            style={{ fontFamily: "var(--font-orbitron)" }}
-                                        >
-                                            ${(getBasePrice(selectedChallenge.id, selectedChallenge.price) * (1 + (addons.rawSpread ? 0.10 : 0) + (addons.zeroCommission ? 0.10 : 0) + (addons.weeklyPayouts ? 0.15 : 0) + (addons.scalingX2 ? 0.25 : 0) + (addons.split90 ? 0.10 : 0) + (addons.split100 ? 0.20 : 0))).toFixed(2)}
-                                        </span>
+                                    {/* ─── COUPON CODE ─── */}
+                                    <div className="border-t border-border-subtle pt-5 mt-4">
+                                        <p className="text-[11px] text-text-muted uppercase tracking-[0.2em] font-semibold mb-3" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                                            <Tag className="w-3.5 h-3.5 inline mr-1.5 -translate-y-[1px]" />
+                                            {t("checkout.confirm.coupon.title")}
+                                        </p>
+
+                                        <AnimatePresence mode="wait">
+                                            {couponStatus === "valid" ? (
+                                                <motion.div
+                                                    key="coupon-applied"
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -8 }}
+                                                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-neon-green/[0.08] border border-neon-green/30"
+                                                >
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-7 h-7 rounded-lg bg-neon-green/20 flex items-center justify-center">
+                                                            <CheckCircle2 className="w-4 h-4 text-neon-green" />
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[13px] font-bold text-neon-green block">{couponCode.toUpperCase()}</span>
+                                                            <span className="text-[10px] text-neon-green/60">{couponLabel} · -{couponDiscount}% {t("checkout.confirm.coupon.discount")}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={handleRemoveCoupon}
+                                                        className="w-6 h-6 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-colors group"
+                                                    >
+                                                        <X className="w-3.5 h-3.5 text-text-muted group-hover:text-red-400 transition-colors" />
+                                                    </button>
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    key="coupon-input"
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -8 }}
+                                                >
+                                                    <div className="flex gap-2">
+                                                        <div className="flex-1 relative">
+                                                            <input
+                                                                type="text"
+                                                                value={couponCode}
+                                                                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); if (couponStatus === "invalid") setCouponStatus("idle"); }}
+                                                                onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                                                                placeholder={t("checkout.confirm.coupon.placeholder")}
+                                                                className={`w-full px-3.5 py-2.5 rounded-xl bg-white/[0.04] border text-[13px] text-white placeholder:text-text-muted/40 outline-none transition-all duration-200 font-mono tracking-wider ${
+                                                                    couponStatus === "invalid"
+                                                                        ? "border-red-500/50 bg-red-500/[0.05]"
+                                                                        : "border-white/10 focus:border-neon-green/40 focus:bg-white/[0.06]"
+                                                                }`}
+                                                                maxLength={20}
+                                                            />
+                                                            {couponStatus === "invalid" && (
+                                                                <motion.p
+                                                                    initial={{ opacity: 0, y: -4 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className="text-[10px] text-red-400 mt-1.5 ml-1"
+                                                                >
+                                                                    {t("checkout.confirm.coupon.invalid")}
+                                                                </motion.p>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={handleApplyCoupon}
+                                                            disabled={!couponCode.trim() || couponStatus === "checking"}
+                                                            className={`px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 whitespace-nowrap ${
+                                                                couponStatus === "checking"
+                                                                    ? "bg-white/5 text-text-muted cursor-wait"
+                                                                    : couponCode.trim()
+                                                                        ? "bg-white/10 text-white hover:bg-white/15 border border-white/10 hover:border-white/20"
+                                                                        : "bg-white/5 text-text-muted/40 cursor-not-allowed border border-transparent"
+                                                            }`}
+                                                            style={{ fontFamily: "var(--font-rajdhani)" }}
+                                                        >
+                                                            {couponStatus === "checking" ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                t("checkout.confirm.coupon.apply")
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
+
+                                    {/* ─── TOTAL ─── */}
+                                    {(() => {
+                                        const priceBeforeCoupon = getBasePrice(selectedChallenge.id, selectedChallenge.price) * (1 + (addons.rawSpread ? 0.10 : 0) + (addons.zeroCommission ? 0.10 : 0) + (addons.weeklyPayouts ? 0.15 : 0) + (addons.scalingX2 ? 0.25 : 0) + (addons.split90 ? 0.10 : 0) + (addons.split100 ? 0.20 : 0));
+                                        const finalPrice = couponDiscount > 0 ? priceBeforeCoupon * (1 - couponDiscount / 100) : priceBeforeCoupon;
+                                        return (
+                                            <div className="border-t border-border-subtle pt-4 flex justify-between items-center px-1 mt-4">
+                                                <span className="text-text-muted font-bold text-[10px] sm:text-xs uppercase tracking-widest font-rajdhani">{t("checkout.confirm.total")}</span>
+                                                <div className="flex items-center gap-2.5">
+                                                    {couponDiscount > 0 && (
+                                                        <span className="text-sm text-text-muted/40 line-through font-mono">
+                                                            ${priceBeforeCoupon.toFixed(2)}
+                                                        </span>
+                                                    )}
+                                                    <span
+                                                        className={`text-2xl sm:text-3xl font-black text-neon-green shadow-neon-green/20 drop-shadow-sm`}
+                                                        style={{ fontFamily: "var(--font-orbitron)" }}
+                                                    >
+                                                        ${finalPrice.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 <motion.button
@@ -927,6 +1069,7 @@ export default function CheckoutPage() {
                                     onClick={() => {
                                         setStep("select");
                                         setAddons({ rawSpread: false, zeroCommission: false, weeklyPayouts: false, scalingX2: false, split90: false, split100: false });
+                                        handleRemoveCoupon();
                                     }}
                                 >
                                     {t("checkout.confirm.goBack")}

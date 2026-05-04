@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that do NOT require authentication
-const PUBLIC_ROUTES = ["/", "/checkout", "/auth", "/api", "/certificate"];
+const PUBLIC_ROUTES = ["/", "/checkout", "/auth", "/api", "/certificate", "/terms", "/rules"];
 
 function isPublicRoute(pathname: string): boolean {
     // Exact match for "/"

@@ -2,9 +2,35 @@
 
 > Este archivo es el **diario de desarrollo** del proyecto. Documenta TODO lo implementado, los errores encontrados, cómo se solucionaron, y las lecciones aprendidas.  
 > **Regla:** Consultar este archivo SIEMPRE antes de proponer nuevas soluciones para no repetir fallos.  
-> **Última actualización:** 15 Marzo 2026
+> **Última actualización:** 15 Abril 2026
 
 ---
+
+## 📅 2026-04-15 — Nomenclatura, Compliance y Soporte
+
+### ✅ Renombrar Challenge Types (UI)
+- **Antes:** "Express X", "Classic Pro", "Express 1 Phase", "Classic 2 Phases"
+- **Ahora:** **"1 Fase"** y **"2 Fases"** en toda la UI pública
+- Las keys de BD (`express_1phase`, `classic_2phase`) **NO cambian** — solo cambian los labels user-facing
+- Archivos actualizados: `dashboard/page.tsx`, `rules/page.tsx`, `es.json`, `en.json`, `Sections.tsx`, `MANUAL_PLATAFORMA.md`, `CONTEXTO_Y_ESTRATEGIA.md`
+
+### ✅ Página de Reglas (`/rules`)
+- Nueva página con 6 secciones accordion: Trading, Objetivos, Retiros, Conducta, Violaciones, T&C
+- Reglas clave: Máx 20 ops/día, Máx 5 posiciones simultáneas, Drawdown Diario (2F: 4% | 1F: 3%), Drawdown Máximo (2F: 10% | 1F: 5%)
+- Link en sidebar y footer
+
+### ✅ Botón flotante de soporte (Landing)
+- Botón verde neón fijo en esquina inferior derecha
+- Modal con email `fundedspread@gmail.com` y tiempo de respuesta <12h
+- Componente: `SupportFloatingButton` en `Sections.tsx`
+
+### ✅ Dashboard: Estado `under_review`
+- Nuevo banner ámbar 🔍 para cuentas en revisión (diferente del rojo de `failed`)
+- Links directos a "Ver Reglas" (`/rules`) y "Soporte" (`mailto:`)
+- Caso activo: Victor Díaz (login `160702717`) — cuenta marcada como `under_review`
+
+---
+
 
 ## 📅 2026-02-28 — Día 1: Inicio del Proyecto
 

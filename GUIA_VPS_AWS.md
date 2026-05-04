@@ -1,6 +1,14 @@
-# Guía: Setup de MetaTrader 5 en AWS VPS Entorno Headless (Linux)
+# ⚠️ DEPRECADO — Guía: Setup de MetaTrader 5 en AWS VPS Entorno Headless (Linux)
 
-Esta guía te ayudará a levantar un servidor completamente gratis en Amazon Web Services (AWS) durante 1 año, y a configurarlo para que pueda ejecutar múltiples instancias de MetaTrader 5 sin necesidad de un entorno gráfico pesado (Windows), logrando alojar entre 10 y 15 cuentas con apenas 1GB de RAM.
+> **🚨 IMPORTANTE (9 Abril 2026):** Esta guía describe un método con Wine + Xvfb en Linux que **NO ES CONFIABLE** para producción. MT5 se crashea repetidamente con errores `X connection broken`. 
+>
+> **➡️ Ver la guía actualizada:** [GUIA_BOT_MT5_RISK_ENGINE.md](./GUIA_BOT_MT5_RISK_ENGINE.md) — que documenta el método correcto usando **Windows nativo** (PC local o VPS Windows).
+>
+> Esta guía se mantiene solo como referencia histórica de lo que se intentó.
+
+---
+
+Esta guía describe cómo levantar un servidor en Amazon Web Services (AWS) con Linux para correr MetaTrader 5 via Wine. **NOTA: Este método demostró ser inestable en producción.**
 
 ## Fase 1: Creación del Servidor (AWS EC2)
 

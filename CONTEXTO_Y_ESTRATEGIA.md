@@ -1,6 +1,6 @@
 # 📌 CONTEXTO Y ESTRATEGIA — Funded Spread (Prop Firm)
 
-> **Última actualización:** 26 Marzo 2026  
+> **Última actualización:** 15 Abril 2026  
 > **Objetivo:** Este archivo es la **biblia del proyecto**. Contiene el contexto completo del negocio, las decisiones estratégicas, la arquitectura técnica y las reglas de trading. Cualquier IA o desarrollador que lea este archivo debe entender el 100% del proyecto sin necesidad de leer código.
 
 ---
@@ -16,7 +16,8 @@
 
 ### Ventaja Competitiva
 - **Sistema de Checkpoints (Escalamiento x2):** Al alcanzar +20% de profit, el trader puede duplicar su capital o retirar ganancias. Si rompe reglas, baja al nivel anterior (no pierde todo).
-- **Challenges Clásicos de 2 Fases:** Modelo estándar de la industria (como FundedNext/FTMO) con Fase 1 (objetivo 8%) y Fase 2 (objetivo 5%).
+- **Challenges de 2 Fases:** Modelo estándar de la industria (como FundedNext/FTMO) con Fase 1 (objetivo 8%) y Fase 2 (objetivo 5%).
+- **Challenges de 1 Fase:** Ruta rápida al fondeo con objetivo de 10% en una sola fase.
 - **Cero fricción:** El cliente paga con cripto → recibe credenciales MT5 por email → opera.
 - **Comunidad orgánica:** Marketing 100% orgánico vía TikTok Lives.
 
@@ -32,7 +33,7 @@ Trader paga Challenge ($49-$499) → 90-95% fracasa → Tarifas se acumulan
 
 ### Tipos de Challenge
 
-#### Opción A: Challenge Clásico 2 Fases (PREDETERMINADO)
+#### Opción A: Challenge 2 Fases (PREDETERMINADO)
 Modelo estándar de la industria, inspirado en FundedNext Stellar 2-Step:
 
 | Métrica | Fase 1 | Fase 2 | Cuenta Fondeada |
@@ -44,7 +45,7 @@ Modelo estándar de la industria, inspirado en FundedNext Stellar 2-Step:
 | Tiempo Límite | 30 días | 60 días | Ilimitado |
 | Profit Split | — | — | 80% base (hasta 100%) |
 
-#### Opción B: Challenge Express 1 Fase
+#### Opción B: Challenge 1 Fase
 Ruta rápida al fondeo, inspirado en FundedNext Stellar 1-Step:
 
 | Métrica | Evaluación | Cuenta Fondeada |
@@ -55,7 +56,7 @@ Ruta rápida al fondeo, inspirado en FundedNext Stellar 1-Step:
 | Días Mínimos | 2 | 2 |
 | Tiempo Límite | 30 días | Ilimitado |
 | Profit Split | — | 80% base (hasta 100%) |
-| Precio | +20% vs Clásico | — |
+| Precio | +20% vs 2 Fases | — |
 
 #### Opción C: Challenge de Escalamiento x2 (Checkpoints)
 Sistema exclusivo de Funded Spread:
@@ -69,7 +70,7 @@ Sistema exclusivo de Funded Spread:
 
 **Regla de Protección:** Si rompes el drawdown en Nivel 3, bajas a Nivel 2 (no pierdes todo).
 
-### Precios (6 Tiers — Classic 2 Fases)
+### Precios (6 Tiers — 2 Fases)
 | Tier | Precio | Capital | Profit Split Base |
 |------|--------|---------|------------------|
 | Micro | $35 | $5,000 | 80% |
@@ -79,7 +80,9 @@ Sistema exclusivo de Funded Spread:
 | Legend | $499 | $100,000 | 80% |
 | Apex | $999 | $200,000 | 80% |
 
-*Express 1 Fase: Precio = Clásico × 1.2 (ejemplo: Starter Express = $59)*
+*1 Fase: Precio = 2 Fases × 1.2 (ejemplo: Starter 1 Fase = $59)*
+
+> ⚠ **NOMENCLATURA IMPORTANTE:** En la UI y documentación pública, los challenges se llaman **"1 Fase"** y **"2 Fases"**. NO usar "Classic" ni "Express" — esos son nombres internos del código (keys de BD: `express_1phase`, `classic_2phase`) que el trader nunca ve.
 
 ### Add-ons de Trading (upselling, aditivos al precio)
 | Add-on | Incremento | Descripción |

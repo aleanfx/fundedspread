@@ -23,9 +23,15 @@ const CHALLENGE_PRICES: Record<string, { price: number; expressPrice: number; ac
     apex: { price: 789, expressPrice: 1089, accountSize: 200000 },
 };
 
+// Coupon codes — server-side validation (mirrors frontend)
+const VALID_COUPONS: Record<string, { discount: number; label: string }> = {
+    "PERFORMANCE": { discount: 10, label: "Performance VIP" },
+    "SPREADZERO": { discount: 8, label: "Spread Zero" },
+};
+
 export async function POST(request: Request) {
     try {
-        const { challengeTier, challengeType, userId, userEmail, addonRawSpread, addonZeroCommission, addonWeeklyPayouts, addonScalingX2, addonSplit90, addonSplit100 } = await request.json();
+        const { challengeTier, challengeType, userId, userEmail, addonRawSpread, addonZeroCommission, addonWeeklyPayouts, addonScalingX2, addonSplit90, addonSplit100, couponCode } = await request.json();
 
         if (!challengeTier || !userId) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -38,8 +44,19 @@ export async function POST(request: Request) {
 
         const basePrice = challengeType === "express_1phase" ? tierConfig.expressPrice : tierConfig.price;
 
-        // Calculate final price with Add-ons
-        const finalPrice = Number((basePrice * (1 + (addonRawSpread ? 0.10 : 0) + (addonZeroCommission ? 0.10 : 0) + (addonWeeklyPayouts ? 0.15 : 0) + (addonScalingX2 ? 0.25 : 0) + (addonSplit90 ? 0.10 : 0) + (addonSplit100 ? 0.20 : 0))).toFixed(2));
+        // Calculate price with Add-ons
+        const priceWithAddons = Number((basePrice * (1 + (addonRawSpread ? 0.10 : 0) + (addonZeroCommission ? 0.10 : 0) + (addonWeeklyPayouts ? 0.15 : 0) + (addonScalingX2 ? 0.25 : 0) + (addonSplit90 ? 0.10 : 0) + (addonSplit100 ? 0.20 : 0))).toFixed(2));
+
+        // Apply coupon discount on the total (after add-ons)
+        let finalPrice = priceWithAddons;
+        let appliedCoupon: string | null = null;
+        if (couponCode && typeof couponCode === "string") {
+            const coupon = VALID_COUPONS[couponCode.trim().toUpperCase()];
+            if (coupon) {
+                finalPrice = Number((priceWithAddons * (1 - coupon.discount / 100)).toFixed(2));
+                appliedCoupon = couponCode.trim().toUpperCase();
+            }
+        }
 
         // 1. Create invoice on NOWPayments
         const invoiceRes = await fetch(`${NOWPAYMENTS_API}/invoice`, {

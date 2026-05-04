@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   TrendingUp,
   TrendingDown,
@@ -23,6 +24,9 @@ import {
   Fingerprint,
   Layers,
   BadgeDollarSign,
+  Search,
+  FileText,
+  Mail,
 } from "lucide-react";
 
 import { useEffect, useState, useMemo } from "react";
@@ -197,9 +201,15 @@ function RecentTrades({ trades }: { trades: Trade[] }) {
       </div>
       {trades.length === 0 ? (
         <div className="text-center py-8">
-          <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
-          <p className="text-sm text-text-muted">Las operaciones aparecerán aquí cuando el EA de MT5 envíe datos.</p>
-          <p className="text-xs text-white/20 mt-1">Conecta tu Expert Advisor para ver el historial en tiempo real.</p>
+          <div className="relative w-14 h-14 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full bg-neon-blue/5 border border-neon-blue/10" />
+            <div className="absolute inset-0 rounded-full border border-neon-blue/20 animate-ping" style={{ animationDuration: '3s' }} />
+            <Clock className="w-6 h-6 text-neon-blue/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-neon-blue/60 bg-neon-blue/5 px-3 py-1 rounded-full border border-neon-blue/10 mb-3">
+            Próximamente
+          </span>
+          <p className="text-sm text-white/25 font-medium mt-2">El historial de operaciones estará disponible muy pronto.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -271,8 +281,8 @@ function AccountCredentials({ account, challengeMetadata, isImpersonating }: { a
   const leverageDisplay = account.ctrader_leverage ? `1:${account.ctrader_leverage}` : '1:100';
 
   const typeLabel =
-    challengeMetadata.type === 'express_1phase' ? 'Express X' :
-      challengeMetadata.type === 'classic_2phase' ? 'Classic Pro' :
+    challengeMetadata.type === 'express_1phase' ? '1 Fase' :
+      challengeMetadata.type === 'classic_2phase' ? '2 Fases' :
         challengeMetadata.type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
 
   const phaseLabel =
@@ -487,7 +497,7 @@ export default function DashboardPage() {
       try {
         setLoading(true);
 
-        let user = null;
+        let user: any = null;
         let userData = null;
         let accountsData = null;
         let foundImpersonation = false;
@@ -561,6 +571,41 @@ export default function DashboardPage() {
           setUserId(user.id);
           setUserObj(user);
           setIsImpersonating(false);
+
+          // ─── AUTO-SYNC: Ensure user has a leaderboard entry ───
+          supabase
+            .from('leaderboard_traders')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('is_fake', false)
+            .maybeSingle()
+            .then(({ data: lbEntry }: { data: any }) => {
+              if (!lbEntry) {
+                const meta = user.user_metadata || {};
+                const displayName = meta.full_name || meta.name || user.email?.split('@')[0] || 'Trader';
+                const countryMap: Record<string, string> = {
+                  "Argentina": "ar", "México": "mx", "Colombia": "co", "Brasil": "br", "Chile": "cl",
+                  "Perú": "pe", "Ecuador": "ec", "República Dominicana": "do", "Uruguay": "uy",
+                  "Panamá": "pa", "Costa Rica": "cr", "Guatemala": "gt", "Venezuela": "ve",
+                  "Bolivia": "bo", "España": "es", "Estados Unidos": "us", "Paraguay": "py",
+                  "El Salvador": "sv", "Nicaragua": "ni", "Honduras": "hn",
+                };
+                supabase.from('leaderboard_traders').insert({
+                  username: displayName,
+                  user_id: user.id,
+                  checkpoint_level: 1,
+                  total_profit: 0,
+                  win_rate: 0,
+                  risk_reward: 0,
+                  account_size: 0,
+                  trades_count: 0,
+                  rank_title: 'novato',
+                  is_fake: false,
+                  country_code: countryMap[meta.country] || null,
+                  avatar_url: meta.avatar_url || null,
+                }).then(() => console.log('Leaderboard: Auto-created entry for', displayName));
+              }
+            });
         }
 
         if (userData && accountsData && accountsData.length > 0) {
@@ -636,7 +681,10 @@ export default function DashboardPage() {
       return;
     }
 
-    if (acc.account_status === 'failed' || acc.is_active === false) {
+    if (acc.account_status === 'under_review') {
+      setChallengeState('active');
+      setAlertMessage(acc.status_reason || 'Tu cuenta está siendo revisada por nuestro equipo.');
+    } else if (acc.account_status === 'failed' || acc.is_active === false) {
       setChallengeState('failed');
       setViolation(acc.status_reason || acc.violation_type || "Cuenta terminada.");
     } else {
@@ -908,7 +956,7 @@ export default function DashboardPage() {
                   {accounts.map(acc => {
                     const typeLabel =
                       acc.challenge_type === 'classic_2phase' ? '2 Fases' :
-                        acc.challenge_type === 'express_1phase' ? 'Express X' :
+                        acc.challenge_type === 'express_1phase' ? '1 Fase' :
                           acc.challenge_type === 'titan_3phase' ? 'Titan Max' : 'Challenge';
 
                     const statusLabel =
@@ -926,8 +974,8 @@ export default function DashboardPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-text-primary" style={{ fontFamily: "var(--font-orbitron)" }}>
-                    {challengeMetadata?.type === 'express_1phase' ? 'Express X' :
-                      challengeMetadata?.type === 'classic_2phase' ? 'Classic Pro' :
+                    {challengeMetadata?.type === 'express_1phase' ? '1 Fase' :
+                      challengeMetadata?.type === 'classic_2phase' ? '2 Fases' :
                         challengeMetadata?.type === 'titan_3phase' ? 'Titan Max' : 'Challenge'}
                   </span>
                   <span className="text-xs text-neon-green px-2 py-0.5 bg-neon-green/10 rounded border border-neon-green/20" style={{ fontFamily: "var(--font-orbitron)" }}>
@@ -951,21 +999,35 @@ export default function DashboardPage() {
 
           {/* Violation Alert */}
           {(violation || alertMessage) && (
-            <motion.div variants={itemVariants} className={`mb-8 ${violation ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30'} p-4 rounded-lg flex items-center gap-3`} style={{ animation: violation ? "pulse 2s infinite" : "none" }}>
-              <ShieldAlert className={`w-6 h-6 flex-shrink-0 ${violation ? 'text-red-500' : 'text-yellow-500'}`} />
-              <div>
-                <h3 className={`font-bold ${violation ? 'text-red-500' : 'text-yellow-500'}`} style={{ fontFamily: "var(--font-orbitron)" }}>
-                  {violation ? t("dashboard.alerts.suspended") : t("dashboard.alerts.attention")}
-                </h3>
-                <p className={`text-sm ${violation ? 'text-red-200' : 'text-yellow-200'}`}>
-                  {violation ? (
-                    violation.includes('daily_drawdown')
-                      ? t("dashboard.alerts.ddExceeded")
-                      : violation.includes('TERMINATED')
-                        ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
-                        : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
-                  ) : alertMessage}
-                </p>
+            <motion.div variants={itemVariants} className={`mb-8 ${violation ? 'bg-red-500/10 border border-red-500/30' : 'bg-amber-500/10 border border-amber-500/30'} p-5 rounded-xl`} style={{ animation: violation ? "pulse 2s infinite" : "none" }}>
+              <div className="flex items-start gap-3">
+                {violation ? (
+                  <ShieldAlert className="w-6 h-6 flex-shrink-0 text-red-500 mt-0.5" />
+                ) : (
+                  <Search className="w-6 h-6 flex-shrink-0 text-amber-400 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <h3 className={`font-bold text-sm mb-1 ${violation ? 'text-red-400' : 'text-amber-400'}`} style={{ fontFamily: "var(--font-orbitron)" }}>
+                    {violation ? t("dashboard.alerts.suspended") : t("dashboard.alerts.underReview")}
+                  </h3>
+                  <p className={`text-sm leading-relaxed ${violation ? 'text-red-200/80' : 'text-amber-200/80'}`}>
+                    {violation ? (
+                      violation.includes('daily_drawdown')
+                        ? t("dashboard.alerts.ddExceeded")
+                        : violation.includes('TERMINATED')
+                          ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
+                          : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
+                    ) : alertMessage}
+                  </p>
+                  <div className="flex items-center gap-3 mt-3">
+                    <Link href="/rules" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
+                      <FileText className="w-3.5 h-3.5" /> {t("dashboard.alerts.viewRules")}
+                    </Link>
+                    <a href="mailto:fundedspread@gmail.com" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
+                      <Mail className="w-3.5 h-3.5" /> {t("dashboard.alerts.contactSupport")}
+                    </a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -1166,23 +1228,42 @@ export default function DashboardPage() {
           </div>
 
           {/* Trading Objectives */}
-          <TradingObjectives
-            dailyDrawdownPct={accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4.0}
-            maxDrawdownPct={accounts.find(a => a.id === selectedAccountId)?.max_drawdown_pct || 10.0}
-            currentDailyDD={0}
-            currentMaxDD={0}
-            currentDailyLoss={0}
-            maxDailyLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.daily_drawdown_pct || 4) / 100)}
-            currentMaxLoss={0}
-            maxLossLimit={challengeMetadata.initialBalance * ((accounts.find(a => a.id === selectedAccountId)?.max_drawdown_pct || 10) / 100)}
-            tradingDaysCount={accounts.find(a => a.id === selectedAccountId)?.trading_days_count || 0}
-            minTradingDays={accounts.find(a => a.id === selectedAccountId)?.challenge_type === 'express_1phase' ? 2 : 5}
-            profitTargetPct={challengeMetadata.profitTargetPct}
-            currentProfitPct={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0) / challengeMetadata.initialBalance * 100}
-            currentProfit={Number(accounts.find(a => a.id === selectedAccountId)?.current_profit || 0)}
-            profitTarget={challengeMetadata.initialBalance * (challengeMetadata.profitTargetPct / 100)}
-            isFunded={accounts.find(a => a.id === selectedAccountId)?.account_status === 'funded'}
-          />
+          {(() => {
+            const acc = accounts.find(a => a.id === selectedAccountId);
+            const initial = Number(acc?.initial_balance) || 10000;
+            const balance = Number(acc?.current_balance) || initial;
+            const equity = Number(acc?.current_equity) || balance;
+            const dailyInit = Number(acc?.daily_initial_balance) || initial;
+            const ddPct = Number(acc?.daily_drawdown_pct) || 4;
+            const maxDDPct = Number(acc?.max_drawdown_pct) || 10;
+            
+            const currentProfit = balance - initial;
+            const currentProfitPct = (currentProfit / initial) * 100;
+            const dailyLoss = Math.max(0, dailyInit - equity);
+            const dailyDDCurrent = (dailyLoss / dailyInit) * 100;
+            const maxLoss = Math.max(0, initial - equity);
+            const maxDDCurrent = maxLoss > 0 ? (maxLoss / initial) * 100 : 0;
+
+            return (
+              <TradingObjectives
+                dailyDrawdownPct={ddPct}
+                maxDrawdownPct={maxDDPct}
+                currentDailyDD={Number(dailyDDCurrent.toFixed(2))}
+                currentMaxDD={Number(maxDDCurrent.toFixed(2))}
+                currentDailyLoss={dailyLoss}
+                maxDailyLossLimit={dailyInit * (ddPct / 100)}
+                currentMaxLoss={maxLoss}
+                maxLossLimit={initial * (maxDDPct / 100)}
+                tradingDaysCount={acc?.trading_days_count || 0}
+                minTradingDays={acc?.challenge_type === 'express_1phase' ? 2 : 5}
+                profitTargetPct={challengeMetadata.profitTargetPct}
+                currentProfitPct={Number(currentProfitPct.toFixed(2))}
+                currentProfit={currentProfit}
+                profitTarget={initial * (challengeMetadata.profitTargetPct / 100)}
+                isFunded={acc?.account_status === 'funded'}
+              />
+            );
+          })()}
 
           {/* P&L Performance Chart */}
           <div className="mb-6">
@@ -1194,13 +1275,20 @@ export default function DashboardPage() {
                 maxDrawdownPct={challengeMetadata.type === 'express_1phase' ? 5 : stats.maxDailyDrawdown}
               />
             ) : (
-              <div className="relative bg-[#0d1424]/80 border border-white/[0.06] rounded-2xl p-8 text-center">
-                <div className="absolute -top-20 right-10 w-60 h-60 bg-emerald-500/[0.02] blur-[100px] rounded-full pointer-events-none" />
-                <BarChart3 className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-sm text-white/30 font-medium" style={{ fontFamily: "var(--font-rajdhani)" }}>
-                  {t("dashboard.pnlEmpty") || "La curva de rendimiento aparecerá cuando comiences a operar"}
+              <div className="relative bg-[#0d1424]/80 border border-white/[0.06] rounded-2xl p-10 text-center overflow-hidden">
+                <div className="absolute -top-20 right-10 w-60 h-60 bg-neon-blue/[0.03] blur-[100px] rounded-full pointer-events-none" />
+                <div className="absolute -bottom-16 left-10 w-40 h-40 bg-neon-green/[0.02] blur-[80px] rounded-full pointer-events-none" />
+                <div className="relative w-14 h-14 mx-auto mb-4">
+                  <div className="absolute inset-0 rounded-full bg-neon-blue/5 border border-neon-blue/10" />
+                  <div className="absolute inset-0 rounded-full border border-neon-blue/20 animate-ping" style={{ animationDuration: '3s' }} />
+                  <BarChart3 className="w-6 h-6 text-neon-blue/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-neon-blue/60 bg-neon-blue/5 px-3 py-1 rounded-full border border-neon-blue/10 mb-3">
+                  Próximamente
+                </span>
+                <p className="text-sm text-white/25 font-medium mt-2" style={{ fontFamily: "var(--font-rajdhani)" }}>
+                  Tu curva de rendimiento estará disponible muy pronto.
                 </p>
-                <p className="text-[11px] text-white/15 mt-1">Conecta tu EA de MT5 para comenzar</p>
               </div>
             )}
           </div>
