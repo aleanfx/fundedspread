@@ -58,10 +58,10 @@ export async function POST(request: Request) {
                     return NextResponse.json({ error: "Faltan credenciales MT5" }, { status: 400 });
                 }
 
-                // 1. Get the transaction to find the user_id
+                // 1. Get the transaction to find the user_id and account_size
                 const { data: tx, error: txErr } = await supabaseAdmin
                     .from("challenge_transactions")
-                    .select("user_id, challenge_tier")
+                    .select("user_id, challenge_tier, account_size")
                     .eq("id", id)
                     .single();
 
@@ -69,21 +69,34 @@ export async function POST(request: Request) {
                     return NextResponse.json({ error: "Transacción no encontrada" }, { status: 404 });
                 }
 
-                // 2. Find the mt5_account linked to this user with pending_creation status
-                const { data: accounts } = await supabaseAdmin
+                // 2. Find ALL mt5_accounts linked to this user with pending_creation status
+                const { data: pendingAccounts } = await supabaseAdmin
                     .from("mt5_accounts")
-                    .select("id")
+                    .select("id, initial_balance")
                     .eq("user_id", tx.user_id)
                     .eq("account_status", "pending_creation")
                     .eq("challenge_tier", tx.challenge_tier)
-                    .order("created_at", { ascending: false })
-                    .limit(1);
+                    .order("created_at", { ascending: false });
 
-                if (!accounts || accounts.length === 0) {
+                if (!pendingAccounts || pendingAccounts.length === 0) {
                     return NextResponse.json({ error: "No se encontró cuenta MT5 pendiente" }, { status: 404 });
                 }
 
-                // 3. Update the mt5_account with credentials and activate it
+                // Take the most recent one, delete any duplicates
+                const primaryAccount = pendingAccounts[0];
+                const duplicateIds = pendingAccounts.slice(1).map(a => a.id);
+
+                if (duplicateIds.length > 0) {
+                    await supabaseAdmin
+                        .from("mt5_accounts")
+                        .delete()
+                        .in("id", duplicateIds);
+                    console.log(`🧹 Cleaned ${duplicateIds.length} duplicate pending account(s) for user ${tx.user_id}`);
+                }
+
+                const accountBalance = Number(primaryAccount.initial_balance) || Number(tx.account_size) || 5000;
+
+                // 3. Update the mt5_account with credentials, balance, and activate it
                 const { error: updateErr } = await supabaseAdmin
                     .from("mt5_accounts")
                     .update({
@@ -92,8 +105,14 @@ export async function POST(request: Request) {
                         mt5_server: mt5Server || "FundedSpread-Server",
                         is_active: true,
                         account_status: "active",
+                        current_balance: accountBalance,
+                        current_equity: accountBalance,
+                        peak_equity: accountBalance,
+                        daily_initial_balance: accountBalance,
+                        current_profit: 0,
+                        floating_pnl: 0,
                     })
-                    .eq("id", accounts[0].id);
+                    .eq("id", primaryAccount.id);
 
                 if (updateErr) {
                     console.error("Error updating MT5 account:", updateErr);
@@ -106,7 +125,7 @@ export async function POST(request: Request) {
                     .update({ status: "active" })
                     .eq("id", id);
 
-                console.log(`✅ Admin activated challenge for user ${tx.user_id} with MT5 login: ${mt5Login}`);
+                console.log(`✅ Admin activated challenge for user ${tx.user_id} with MT5 login: ${mt5Login} — Balance: $${accountBalance}`);
                 break;
             }
 

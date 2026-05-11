@@ -89,34 +89,48 @@ export async function POST(request: Request) {
                 profitSplitPct = 85;
             }
 
-            const { error: accountError } = await supabaseAdmin
+            // Check if a pending account already exists for this user+tier (prevent duplicates from webhook retries)
+            const { data: existingAccounts } = await supabaseAdmin
                 .from("mt5_accounts")
-                .insert({
-                    user_id: transaction.user_id,
-                    initial_balance: accountSize,
-                    current_balance: 0,
-                    current_equity: 0,
-                    daily_initial_balance: accountSize,
-                    is_active: false,
-                    account_status: "pending_creation",
-                    challenge_tier: transaction.challenge_tier,
-                    challenge_type: challengeType,
-                    challenge_phase: 1,
-                    profit_target_pct: profitTargetPct,
-                    daily_drawdown_pct: dailyDDPct,
-                    max_drawdown_pct: maxDDPct,
-                    profit_split_pct: profitSplitPct,
-                    can_level_up: false,
-                    has_raw_spread: transaction.has_raw_spread || false,
-                    has_zero_commission: transaction.has_zero_commission || false,
-                    has_weekly_payouts: transaction.has_weekly_payouts || false,
-                    has_scaling_x2: transaction.has_scaling_x2 || false,
-                    addon_split_90: transaction.addon_split_90 || false,
-                    addon_split_100: transaction.addon_split_100 || false,
-                });
+                .select("id")
+                .eq("user_id", transaction.user_id)
+                .eq("challenge_tier", transaction.challenge_tier)
+                .in("account_status", ["pending_creation", "active"])
+                .limit(1);
 
-            if (accountError) {
-                console.error("Error creating mt5_account:", accountError);
+            if (existingAccounts && existingAccounts.length > 0) {
+                console.log(`⚠ MT5 account already exists for user ${transaction.user_id}, tier ${transaction.challenge_tier} — skipping duplicate creation`);
+            } else {
+                const { error: accountError } = await supabaseAdmin
+                    .from("mt5_accounts")
+                    .insert({
+                        user_id: transaction.user_id,
+                        initial_balance: accountSize,
+                        current_balance: accountSize,
+                        current_equity: accountSize,
+                        peak_equity: accountSize,
+                        daily_initial_balance: accountSize,
+                        is_active: false,
+                        account_status: "pending_creation",
+                        challenge_tier: transaction.challenge_tier,
+                        challenge_type: challengeType,
+                        challenge_phase: 1,
+                        profit_target_pct: profitTargetPct,
+                        daily_drawdown_pct: dailyDDPct,
+                        max_drawdown_pct: maxDDPct,
+                        profit_split_pct: profitSplitPct,
+                        can_level_up: false,
+                        has_raw_spread: transaction.has_raw_spread || false,
+                        has_zero_commission: transaction.has_zero_commission || false,
+                        has_weekly_payouts: transaction.has_weekly_payouts || false,
+                        has_scaling_x2: transaction.has_scaling_x2 || false,
+                        addon_split_90: transaction.addon_split_90 || false,
+                        addon_split_100: transaction.addon_split_100 || false,
+                    });
+
+                if (accountError) {
+                    console.error("Error creating mt5_account:", accountError);
+                }
             }
 
             // Transaction stays at 'paid' — admin will review, assign MT5 credentials, and activate manually
