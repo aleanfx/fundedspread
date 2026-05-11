@@ -691,10 +691,10 @@ export default function DashboardPage() {
       setChallengeState('active');
     }
 
-    const initial = Number(acc.initial_balance) || 10000;
-    const dailyInitial = Number(acc.daily_initial_balance) || 10000;
-    const currentEq = Number(acc.current_equity) || 10000;
-    const currentBal = Number(acc.current_balance) || 10000;
+    const initial = Number(acc.initial_balance) || 5000;
+    const dailyInitial = Number(acc.daily_initial_balance) || initial;
+    const currentEq = acc.current_equity != null && Number(acc.current_equity) !== 0 ? Number(acc.current_equity) : initial;
+    const currentBal = acc.current_balance != null && Number(acc.current_balance) !== 0 ? Number(acc.current_balance) : initial;
 
     const drawdownValue = Math.max(0, dailyInitial - currentEq);
     const drawdownPct = (drawdownValue / dailyInitial) * 100;
@@ -1230,9 +1230,9 @@ export default function DashboardPage() {
           {/* Trading Objectives */}
           {(() => {
             const acc = accounts.find(a => a.id === selectedAccountId);
-            const initial = Number(acc?.initial_balance) || 10000;
-            const balance = Number(acc?.current_balance) || initial;
-            const equity = Number(acc?.current_equity) || balance;
+            const initial = Number(acc?.initial_balance) || 5000;
+            const balance = acc?.current_balance != null && Number(acc.current_balance) !== 0 ? Number(acc.current_balance) : initial;
+            const equity = acc?.current_equity != null && Number(acc.current_equity) !== 0 ? Number(acc.current_equity) : balance;
             const dailyInit = Number(acc?.daily_initial_balance) || initial;
             const ddPct = Number(acc?.daily_drawdown_pct) || 4;
             const maxDDPct = Number(acc?.max_drawdown_pct) || 10;
