@@ -319,7 +319,8 @@
       "ddExceededShort": "Daily Drawdown exceeded 5%",
       "suspendedReason": "Your trading account has been suspended:",
       "viewRules": "View Rules",
-      "contactSupport": "Support"
+      "contactSupport": "Support",
+      "buyNewChallenge": "Purchase New Challenge"
     },
     "welcomeBack": "Welcome back,",
     "levelUp": {

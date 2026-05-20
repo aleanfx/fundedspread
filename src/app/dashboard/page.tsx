@@ -1014,18 +1014,25 @@ export default function DashboardPage() {
                     {violation ? (
                       violation.includes('daily_drawdown')
                         ? t("dashboard.alerts.ddExceeded")
-                        : violation.includes('TERMINATED')
-                          ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
-                          : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
+                        : violation.includes('max_drawdown')
+                          ? "Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Máximo permitido (10%). Por favor, dirígete a la sección de Retos para adquirir una nueva cuenta y continuar operando."
+                          : violation.includes('TERMINATED')
+                            ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
+                            : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`
                     ) : alertMessage}
                   </p>
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex flex-wrap items-center gap-3 mt-4">
                     <Link href="/rules" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
                       <FileText className="w-3.5 h-3.5" /> {t("dashboard.alerts.viewRules")}
                     </Link>
                     <a href="mailto:fundedspread@gmail.com" className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${violation ? 'text-red-400 hover:text-red-300' : 'text-amber-400 hover:text-amber-300'} transition-colors`}>
                       <Mail className="w-3.5 h-3.5" /> {t("dashboard.alerts.contactSupport")}
                     </a>
+                    {violation && (
+                      <Link href="/checkout" className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neon-green hover:text-neon-green/80 bg-neon-green/10 px-3 py-1.5 rounded-lg border border-neon-green/20 hover:border-neon-green/30 transition-all shadow-[0_0_10px_rgba(57,255,20,0.1)] hover:shadow-[0_0_15px_rgba(57,255,20,0.2)] md:ml-auto">
+                        <Wallet className="w-3.5 h-3.5" /> {t("dashboard.alerts.buyNewChallenge") || "Adquirir Nuevo Reto"}
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
