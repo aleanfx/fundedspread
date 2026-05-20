@@ -1015,7 +1015,7 @@ export default function DashboardPage() {
                       violation.includes('daily_drawdown')
                         ? t("dashboard.alerts.ddExceeded")
                         : violation.includes('max_drawdown')
-                          ? "Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Máximo permitido (10%). Por favor, dirígete a la sección de Retos para adquirir una nueva cuenta y continuar operando."
+                          ? t("dashboard.alerts.maxDrawdownExceeded") || "Tu cuenta ha sido suspendida porque se excedió el límite de Drawdown Máximo permitido (10%). Para volver a intentarlo compra nuevamente un Reto."
                           : violation.includes('TERMINATED')
                             ? violation.replace('daily_drawdown_5_percent', t("dashboard.alerts.ddExceededShort")).replace(/_/g, ' ')
                             : `${t("dashboard.alerts.suspendedReason")} ${violation.replace(/_/g, ' ')}`

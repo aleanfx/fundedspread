@@ -317,6 +317,7 @@
       "underReview": "🔍 ACCOUNT UNDER REVIEW",
       "ddExceeded": "Your account has been suspended because the 5% Daily Drawdown limit was exceeded. Contact support to review your account.",
       "ddExceededShort": "Daily Drawdown exceeded 5%",
+      "maxDrawdownExceeded": "Your account has been suspended because the maximum Drawdown limit (10%) was exceeded. To try again, please purchase a new Challenge.",
       "suspendedReason": "Your trading account has been suspended:",
       "viewRules": "View Rules",
       "contactSupport": "Support",
